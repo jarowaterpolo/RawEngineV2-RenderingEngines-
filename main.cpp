@@ -29,9 +29,20 @@
 int g_width = 800;
 int g_height = 600;
 
+float cameraMoveZAxis = 0;
+float cameraMoveXAxis = 0;
+
 void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cameraMoveZAxis -= 0.01f;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cameraMoveZAxis += 0.01f;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraMoveXAxis += 0.01f;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cameraMoveXAxis -= 0.01f;
 }
 
 void framebufferSizeCallback(GLFWwindow *window,
@@ -182,6 +193,12 @@ int main() {
 
         processInput(window);
         suzanne.rotate(glm::vec3(0.0f, 1.0f, 0.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
+
+        glm::vec3 offset = glm::vec3(cameraMoveXAxis, 0.0f, cameraMoveZAxis);
+        //VP
+        view = glm::lookAt(cameraPos + offset, cameraTarget + offset, cameraUp);
+        projection = glm::perspective(glm::radians(45.0f), static_cast<float>(g_width) / static_cast<float>(g_height), 0.1f, 100.0f);
+
 
         glUseProgram(textureShaderProgram);
         glUniformMatrix4fv(textureModelUniform, 1, GL_FALSE, glm::value_ptr(projection * view * quadModel.getModelMatrix()));
