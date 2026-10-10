@@ -12,7 +12,7 @@ namespace core {
     public:
         Model(std::vector<core::Mesh> meshes) : meshes(meshes), modelMatrix(1) {}
 
-        void render();
+        void render(GLenum drawMode);
 
         void translate(glm::vec3 translation);
         void rotate(glm::vec3 axis, float radians);

@@ -2,9 +2,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace core {
-    void Model::render() {
+    void Model::render(GLenum drawMode) {
         for (int i = 0; i < meshes.size(); ++i) {
-            meshes[i].render();
+            meshes[i].render(drawMode);
         }
     }
 
