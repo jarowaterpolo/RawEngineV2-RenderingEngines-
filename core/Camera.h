@@ -22,7 +22,7 @@ class Camera {
     glm::vec3 right = glm::normalize(glm::cross(worldUp, direction));
     glm::vec3 up = glm::cross(direction, right);
     //extra
-    float cameraMoveSpeed;
+    float cameraMoveSpeed = 1;
     float FOV;
     float aspectRatio;
     float clipNear;
@@ -30,22 +30,26 @@ class Camera {
     //matrices
     glm::mat4 view;
     glm::mat4 projection = glm::perspective(glm::radians(FOV), aspectRatio, clipNear, clipFar);
-public:
-    glm::vec3 moveAxis;
-    Camera(float aspectRatio);
-    Camera(float aspectRatio, glm::vec3 cameraPos, glm::vec3 cameraTarget, float FOV, float clipNear, float clipFar);
+    //rotation
+    float totalRotationOnX;
+    float totalRotationOnY;
 
-    glm::vec3 GetPos();
-    glm::vec3 GetTarget();
-    glm::vec3 GetUp();
-    glm::mat4 GetViewMatrix();
-    glm::mat4 GetProjectionMatrix();
+    public:
+        Camera(float aspectRatio);
+        Camera(float aspectRatio, glm::vec3 cameraPos, glm::vec3 cameraTarget, float FOV, float clipNear, float clipFar);
 
-    void Input(GLFWwindow *window, float standardInputValue);
-    void LookAt();
-    void RotateOnX(float angleDegrees);
-    void RotateOnY(float angleDegrees);
-    void UpdateAspectRatio(float aspectRatio);
+        glm::vec3 GetPos();
+        glm::vec3 GetTarget();
+        glm::vec3 GetUp();
+        glm::mat4 GetViewMatrix();
+        glm::mat4 GetProjectionMatrix();
+
+        void Input(GLFWwindow *window, float standardInputValue);
+        void LookAt();
+        void RotateOnX(float angleDegrees);
+        void RotateOnY(float angleDegrees);
+        void UpdateAspectRatio(float aspectRatio);
+        void UpdateCameraVectors();
 };
 
 #endif //RAWENGINE_CAMERA_H

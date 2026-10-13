@@ -53,55 +53,97 @@ glm::mat4 Camera::GetProjectionMatrix()
 {
     return projection;
 }
-void Camera::LookAt()
-{
-    view = glm::lookAt(position + moveAxis,target + moveAxis, up);
-    projection = glm::perspective(glm::radians(FOV), aspectRatio, clipNear, clipFar);
-}
-void Camera::RotateOnX(float angleDegrees)
-{
-    glm::vec3 offset = position - target;
-    glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(angleDegrees), right);
-    offset = glm::vec3(rotation * glm::vec4(offset, 1.0f));
-
-    position = target + offset;
-    direction = glm::normalize(position - target);
-}
-void Camera::RotateOnY(float angleDegrees)
-{
-    glm::vec3 offset = position - target;
-    glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(angleDegrees), up);
-    offset = glm::vec3(rotation * glm::vec4(offset, 1.0f));
-
-    position = target + offset;
-    direction = glm::normalize(position - target);
-}
 void Camera::UpdateAspectRatio(float aspectRatio)
 {
     this->aspectRatio = aspectRatio;
     projection = glm::perspective(glm::radians(FOV), aspectRatio, clipNear, clipFar);
 }
+void Camera::UpdateCameraVectors()
+{
+    direction = glm::normalize(target - position);
+    right = glm::normalize(glm::cross(direction, worldUp));
+    up = glm::normalize(glm::cross(right, direction));
+}
+void Camera::LookAt()
+{
+    view = glm::lookAt(position,target, up);
+    projection = glm::perspective(glm::radians(FOV), aspectRatio, clipNear, clipFar);
+}
+void Camera::RotateOnX(float angleDegrees)
+{
+    float newPitch = totalRotationOnX + angleDegrees;
+    if (newPitch > 89.0f || newPitch < -89.0f) {
+        return;
+    }
+    totalRotationOnX = newPitch;
+
+    glm::vec3 offset = position - target;
+    glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(angleDegrees), right);
+    offset = glm::vec3(rotation * glm::vec4(offset, 1.0f));
+
+    position = target + offset;
+
+    UpdateCameraVectors();
+}
+void Camera::RotateOnY(float angleDegrees)
+{
+    float newPitch = totalRotationOnY + angleDegrees;
+    if (newPitch > 179.0f || newPitch < -179.0f) {
+        return;
+    }
+    totalRotationOnY = newPitch;
+
+    glm::vec3 offset = position - target;
+    glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(angleDegrees), up);
+    offset = glm::vec3(rotation * glm::vec4(offset, 1.0f));
+
+    position = target + offset;
+
+    UpdateCameraVectors();
+}
 void Camera::Input(GLFWwindow *window, float standardInputValue)
 {
     float currentInput = standardInputValue * cameraMoveSpeed;
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        moveAxis.z -= currentInput;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        moveAxis.z += currentInput;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        moveAxis.x -= currentInput;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        moveAxis.x += currentInput;
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        moveAxis.y += currentInput;
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        moveAxis.y -= currentInput;
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        position += direction * currentInput;
+        target += direction * currentInput;
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        position -= direction * currentInput;
+        target -= direction * currentInput;
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        position -= right * currentInput;
+        target -= right * currentInput;
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        position += right * currentInput;
+        target += right * currentInput;
+    }
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+        position += up * currentInput;
+        target += up * currentInput;
+    }
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+        position -= up * currentInput;
+        target -= up * currentInput;
+    }
+    if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
+        if (FOV > 30) {
+            FOV -= .05f;
+        }
+    }
+    if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
+        if (FOV < 120) {
+            FOV += .05f;
+        }
+    }
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
         cameraMoveSpeed = 2.5f;
+    }
     else {
         cameraMoveSpeed = 1.0f;
     }
-    if (glfwGetKey(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
-
 }
+

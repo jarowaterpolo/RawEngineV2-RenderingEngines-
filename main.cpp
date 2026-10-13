@@ -34,7 +34,19 @@ int g_height = 600;
 float standardInputValue = 0.01f;
 float aspectRatio = float(g_width) / float(g_height);
 Camera camera(aspectRatio);
+bool inWindow = false;
+bool holdingRMB = false;
+static double lastX = 0.0;
+static double lastY = 0.0;
+static bool firstMouse = true;
 GLenum drawMode = GL_TRIANGLES;
+float colorMult = 0.0f;
+glm::vec4 uniformColor = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+
+//https://www.youtube.com/watch?v=EE5cS8EMT78 Cursor & Mouse callbacks
+static void cursorPosCallback(GLFWwindow *window, double xpos, double ypos);
+void cursorEnterCallback(GLFWwindow *window, int entered);
+void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
 
 void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -44,7 +56,6 @@ void processInput(GLFWwindow *window) {
     //camera
     camera.Input(window, standardInputValue);
 }
-
 void framebufferSizeCallback(GLFWwindow *window,
                              int width, int height) {
     g_width = width;
@@ -64,7 +75,6 @@ std::string readFileToString(const std::string &filePath) {
     buffer << fileStream.rdbuf();
     return buffer.str();
 }
-
 GLuint generateShader(const std::string &shaderPath, GLuint shaderType) {
     printf("Loading shader: %s\n", shaderPath.c_str());
     const std::string shaderText = readFileToString(shaderPath);
@@ -98,6 +108,18 @@ int main() {
         glfwTerminate();
         return -1;
     }
+
+    //JJN get cursor pos setter
+    glfwSetCursorPosCallback(window, cursorPosCallback);
+    //disable cursor
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //when cursor enter setter
+    glfwSetCursorEnterCallback(window, cursorEnterCallback);
+    //mouse button setter
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    //sticky key keep track of a button press that might have happend in the same poll
+    glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, 1);
+
     glfwMakeContextCurrent(window);
 
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
@@ -161,12 +183,19 @@ int main() {
     core::Model suzanne = core::AssimpLoader::loadModel("models/nonormalmonkey.obj");
     core::Texture cmgtGatoTexture("textures/CMGaTo_crop.png");
 
-    camera.RotateOnX(45);
-    camera.RotateOnY(45);
+    //my own model
+    core::Model cube = core::AssimpLoader::loadModel("models/RandoCubeForRenderingEngines2.obj");
+
+    // camera.RotateOnX(45);
+    // camera.RotateOnY(45);
+    camera.UpdateCameraVectors();
 
     glm::vec4 clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
     glClearColor(clearColor.r,
                  clearColor.g, clearColor.b, clearColor.a);
+
+    GLint colorMultUniformLocation = glGetUniformLocation(modelShaderProgram, "colorMult");
+    GLint uniformColorLocation = glGetUniformLocation(modelShaderProgram, "uniformColor");
 
     GLint mvpMatrixUniform = glGetUniformLocation(modelShaderProgram, "mvpMatrix");
     GLint textureModelUniform = glGetUniformLocation(textureShaderProgram, "mvpMatrix");
@@ -176,6 +205,7 @@ int main() {
     double finishFrameTime = 0.0;
     float deltaTime = 0.0f;
     float rotationStrength = 100.0f;
+    double Xpos, Ypos;
     
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -186,12 +216,15 @@ int main() {
         ImGui::Begin("Raw Engine v2");
         ImGui::Text("Hello :)");
         ImGui::Text("Im Jaro");
-        if (ImGui::Button("Click me", ImVec2(60, 60)))
+        if (ImGui::Button("Make something appear", ImVec2(200, 60)))
         {
             printf("Clicked\n");
+            if (colorMult < 1.0f) {
+            colorMult += 0.01f;
+            }
         };
         //wireframe button
-        if (ImGui::Button("Toggle Wireframe", ImVec2(60, 60))) {
+        if (ImGui::Button("Toggle Wireframe", ImVec2(120, 60))) {
             if (drawMode == GL_TRIANGLES) {
                 drawMode = GL_LINES;
             }
@@ -199,12 +232,21 @@ int main() {
                 drawMode = GL_TRIANGLES;
             }
         }
+
+        if (ImGui::ColorPicker3("Color", glm::value_ptr(uniformColor))) {
+
+        }
         ImGui::End();
 
         processInput(window);
         suzanne.rotate(glm::vec3(0.0f, 1.0f, 0.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
+        cube.rotate(glm::vec3(0.0f, 1.0f, 1.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
 
         camera.LookAt();
+        glfwGetCursorPos(window, &Xpos, &Ypos);
+
+        glUniform1f(colorMultUniformLocation, colorMult);
+        glUniform4f(uniformColorLocation, uniformColor.r, uniformColor.g, uniformColor.b, uniformColor.a);
 
         glUseProgram(textureShaderProgram);
         glUniformMatrix4fv(textureModelUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * quadModel.getModelMatrix()));
@@ -218,6 +260,25 @@ int main() {
         glUseProgram(modelShaderProgram);
         glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * suzanne.getModelMatrix()));
         suzanne.render(drawMode);
+
+        glm::mat4 offsetMatrix = glm::mat4(1,0,0,0,
+                                            0,1,0,0,
+                                            0,0,1,0,
+                                            2,0,0,1);
+
+        glUseProgram(modelShaderProgram);
+        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * suzanne.getModelMatrix() * offsetMatrix));
+        suzanne.render(drawMode);
+
+        offsetMatrix += glm::mat4(0,0,0,0,
+                                    0,0,0,0,
+                                    0,0,0,0,
+                                    2,0,0,0);
+
+        glUseProgram(modelShaderProgram);
+        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * cube.getModelMatrix() * offsetMatrix));
+        cube.render(drawMode);
+
         glBindVertexArray(0);
 
         ImGui::Render();
@@ -237,4 +298,60 @@ int main() {
 
     glfwTerminate();
     return 0;
+}
+
+//also camera rotation
+static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
+{
+    if (inWindow && holdingRMB) {
+        if (firstMouse) {
+            lastX = xpos;
+            lastY = ypos;
+            firstMouse = false;
+        }
+
+        printf("cursorPosCallback\n");
+        printf("pos = (%f,%f)\n", xpos, ypos);
+
+        float xoffset = lastX - xpos;
+        float yoffset = lastY - ypos;
+
+        lastX = xpos;
+        lastY = ypos;
+
+        float sensitivity = 0.2f;
+        xoffset *= sensitivity;
+        yoffset *= sensitivity;
+
+        camera.RotateOnX(yoffset);
+        camera.RotateOnY(xoffset);
+    }
+    else {
+        firstMouse = true;
+    }
+}
+void cursorEnterCallback(GLFWwindow *window, int entered)
+{
+    if (entered) {
+        printf("entered window\n");
+        inWindow = true;
+    }
+    else {
+        printf("left window\n");
+        inWindow = false;
+    }
+}
+void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
+{
+    if (inWindow) {
+        if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+            printf("right mouse button pressed\n");
+            holdingRMB = true;
+        }
+
+        if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
+            printf("right mouse button released\n");
+            holdingRMB = false;
+        }
+    }
 }
