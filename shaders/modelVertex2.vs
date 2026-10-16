@@ -7,9 +7,13 @@ out vec3 fPos;
 out vec3 fNor;
 out vec2 uv;
 
+
 void main() {
-  fPos = aPos;
+//  fPos = aPos;
+  float scaling = 0.5f;
+  vec3 scaledPos = aPos * scaling;
+  fPos = scaledPos;
   fNor = aNor;
   uv = aUv;
-  gl_Position = mvpMatrix2 * vec4(aPos, 1.0);
+  gl_Position = mvpMatrix2 * vec4(scaledPos, 1.0);
 }

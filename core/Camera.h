@@ -22,7 +22,8 @@ class Camera {
     glm::vec3 right = glm::normalize(glm::cross(worldUp, direction));
     glm::vec3 up = glm::cross(direction, right);
     //extra
-    float cameraMoveSpeed = 1;
+    float cameraMoveSpeed;
+    float cameraSpeedUpMult;
     float FOV;
     float aspectRatio;
     float clipNear;
@@ -44,7 +45,7 @@ class Camera {
         glm::mat4 GetViewMatrix();
         glm::mat4 GetProjectionMatrix();
 
-        void Input(GLFWwindow *window, float standardInputValue);
+        void Input(GLFWwindow *window, float deltaTime);
         void LookAt();
         void RotateOnX(float angleDegrees);
         void RotateOnY(float angleDegrees);

@@ -18,6 +18,7 @@ Camera::Camera(float aspectRatio)
     clipNear = 0.1f;
     clipFar = 100.0f;
     this->aspectRatio = aspectRatio;
+    cameraMoveSpeed = 10.0f;
 }
 Camera::Camera(float aspectRatio, glm::vec3 cameraPos, glm::vec3 cameraTarget, float FOV, float clipNear, float clipFar)
 {
@@ -32,6 +33,7 @@ Camera::Camera(float aspectRatio, glm::vec3 cameraPos, glm::vec3 cameraTarget, f
     this->FOV = FOV;
     this->clipNear = clipNear;
     this->clipFar = clipFar;
+    cameraMoveSpeed = 20.0f;
 }
 glm::vec3 Camera::GetPos()
 {
@@ -101,9 +103,10 @@ void Camera::RotateOnY(float angleDegrees)
 
     UpdateCameraVectors();
 }
-void Camera::Input(GLFWwindow *window, float standardInputValue)
+void Camera::Input(GLFWwindow *window, float deltaTime)
 {
-    float currentInput = standardInputValue * cameraMoveSpeed;
+    float currentInput = cameraMoveSpeed * cameraSpeedUpMult * deltaTime;
+    printf("cameraMoveSpeed = %f, DeltaTime = %f, currentInput = %f \n", cameraMoveSpeed * cameraSpeedUpMult, deltaTime, currentInput);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         position += direction * currentInput;
@@ -140,10 +143,10 @@ void Camera::Input(GLFWwindow *window, float standardInputValue)
         }
     }
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-        cameraMoveSpeed = 2.5f;
+        cameraSpeedUpMult = 2.5f;
     }
     else {
-        cameraMoveSpeed = 1.0f;
+        cameraSpeedUpMult = 1.0f;
     }
 }
 

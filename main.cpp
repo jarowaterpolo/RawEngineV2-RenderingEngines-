@@ -31,7 +31,6 @@ int g_width = 800;
 int g_height = 600;
 
 //JJN Vars
-float standardInputValue = 0.01f;
 float aspectRatio = float(g_width) / float(g_height);
 Camera camera(aspectRatio);
 bool inWindow = false;
@@ -42,19 +41,20 @@ static bool firstMouse = true;
 GLenum drawMode = GL_TRIANGLES;
 float colorMult = 0.0f;
 glm::vec4 uniformColor = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+glm::vec4 uniformColor2 = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+float deltaTime = 0.0f;
 
 //https://www.youtube.com/watch?v=EE5cS8EMT78 Cursor & Mouse callbacks
 static void cursorPosCallback(GLFWwindow *window, double xpos, double ypos);
 void cursorEnterCallback(GLFWwindow *window, int entered);
 void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
-
 void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
     //JJNInput
     //camera
-    camera.Input(window, standardInputValue);
+    camera.Input(window, deltaTime);
 }
 void framebufferSizeCallback(GLFWwindow *window,
                              int width, int height) {
@@ -213,6 +213,7 @@ int main() {
 
     GLint colorMultUniformLocation = glGetUniformLocation(modelShaderProgram, "colorMult");
     GLint uniformColorLocation = glGetUniformLocation(modelShaderProgram, "uniformColor");
+    GLuint uniformColorLocation2 = glGetUniformLocation(modelShaderProgram2, "uniformColor");
 
     GLint mvpMatrixUniform = glGetUniformLocation(modelShaderProgram, "mvpMatrix");
     GLint textureModelUniform = glGetUniformLocation(textureShaderProgram, "mvpMatrix");
@@ -223,7 +224,6 @@ int main() {
 
     double currentTime = glfwGetTime();
     double finishFrameTime = 0.0;
-    float deltaTime = 0.0f;
     float rotationStrength = 100.0f;
     double Xpos, Ypos;
     
@@ -253,7 +253,10 @@ int main() {
             }
         }
 
-        if (ImGui::ColorPicker3("Color", glm::value_ptr(uniformColor))) {
+        if (ImGui::ColorPicker3("Color_Monkey", glm::value_ptr(uniformColor))) {
+
+        }
+        if (ImGui::ColorPicker3("Color_My_Model", glm::value_ptr(uniformColor2))) {
 
         }
         ImGui::End();
@@ -304,8 +307,7 @@ int main() {
         // my own added model and shaders
         glUseProgram(modelShaderProgram2);
         glUniform1f(colorMultUniformLocation, colorMult);
-        glUniform4f(uniformColorLocation, uniformColor.r, uniformColor.g, uniformColor.b, uniformColor.a);
-
+        glUniform4f(uniformColorLocation2, uniformColor2.r, uniformColor2.g, uniformColor2.b, uniformColor2.a);
         glUniformMatrix4fv(mvpMatrixUniform2, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * cube.getModelMatrix() * offsetMatrix));
         cube.render(drawMode);
         glBindVertexArray(0);
