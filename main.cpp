@@ -148,6 +148,10 @@ int main() {
     const GLuint modelVertexShader = generateShader("shaders/modelVertex.vs", GL_VERTEX_SHADER);
     const GLuint fragmentShader = generateShader("shaders/fragment.fs", GL_FRAGMENT_SHADER);
     const GLuint textureShader = generateShader("shaders/texture.fs", GL_FRAGMENT_SHADER);
+    //my own added shaders
+    const GLuint modelVertexShader2 = generateShader("shaders/modelVertex2.vs", GL_VERTEX_SHADER);
+    const GLuint fragmentShader2 = generateShader("shaders/fragment2.fs", GL_FRAGMENT_SHADER);
+
 
     int success;
     char infoLog[512];
@@ -169,10 +173,23 @@ int main() {
         glGetProgramInfoLog(textureShaderProgram, 512, NULL, infoLog);
         printf("Error! Making Shader Program: %s\n", infoLog);
     }
+    //my own added shaders
+    const unsigned int modelShaderProgram2 = glCreateProgram();
+    glAttachShader(modelShaderProgram2, modelVertexShader2);
+    glAttachShader(modelShaderProgram2, fragmentShader2);
+    glLinkProgram(modelShaderProgram2);
+    glGetProgramiv(modelShaderProgram2, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(modelShaderProgram2, 512, NULL, infoLog);
+        printf("Error! Making Shader Program: %s\n", infoLog);
+    }
 
     glDeleteShader(modelVertexShader);
     glDeleteShader(fragmentShader);
     glDeleteShader(textureShader);
+    //my own added shaders
+    glDeleteShader(modelVertexShader2);
+    glDeleteShader(fragmentShader2);
 
     core::Mesh quad = core::Mesh::generateQuad();
     core::Model quadModel({quad});
@@ -200,6 +217,9 @@ int main() {
     GLint mvpMatrixUniform = glGetUniformLocation(modelShaderProgram, "mvpMatrix");
     GLint textureModelUniform = glGetUniformLocation(textureShaderProgram, "mvpMatrix");
     GLint textureUniform = glGetUniformLocation(textureShaderProgram, "text");
+
+    //my own added shaders + model
+    GLint mvpMatrixUniform2 = glGetUniformLocation(modelShaderProgram2, "mvpMatrix2");
 
     double currentTime = glfwGetTime();
     double finishFrameTime = 0.0;
@@ -245,8 +265,6 @@ int main() {
         camera.LookAt();
         glfwGetCursorPos(window, &Xpos, &Ypos);
 
-        glUniform1f(colorMultUniformLocation, colorMult);
-        glUniform4f(uniformColorLocation, uniformColor.r, uniformColor.g, uniformColor.b, uniformColor.a);
 
         glUseProgram(textureShaderProgram);
         glUniformMatrix4fv(textureModelUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * quadModel.getModelMatrix()));
@@ -258,8 +276,11 @@ int main() {
         glActiveTexture(GL_TEXTURE0);
 
         glUseProgram(modelShaderProgram);
+        glUniform1f(colorMultUniformLocation, colorMult);
+        glUniform4f(uniformColorLocation, uniformColor.r, uniformColor.g, uniformColor.b, uniformColor.a);
         glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * suzanne.getModelMatrix()));
         suzanne.render(drawMode);
+        // glBindVertexArray(0);
 
         glm::mat4 offsetMatrix = glm::mat4(1,0,0,0,
                                             0,1,0,0,
@@ -267,19 +288,30 @@ int main() {
                                             2,0,0,1);
 
         glUseProgram(modelShaderProgram);
+        glUniform1f(colorMultUniformLocation, colorMult);
+        glUniform4f(uniformColorLocation, uniformColor.r, uniformColor.g, uniformColor.b, uniformColor.a);
+
         glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * suzanne.getModelMatrix() * offsetMatrix));
         suzanne.render(drawMode);
+        glBindVertexArray(0);
 
         offsetMatrix += glm::mat4(0,0,0,0,
                                     0,0,0,0,
                                     0,0,0,0,
                                     2,0,0,0);
 
-        glUseProgram(modelShaderProgram);
-        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * cube.getModelMatrix() * offsetMatrix));
-        cube.render(drawMode);
 
+        // my own added model and shaders
+        glUseProgram(modelShaderProgram2);
+        glUniform1f(colorMultUniformLocation, colorMult);
+        glUniform4f(uniformColorLocation, uniformColor.r, uniformColor.g, uniformColor.b, uniformColor.a);
+
+        glUniformMatrix4fv(mvpMatrixUniform2, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * cube.getModelMatrix() * offsetMatrix));
+        cube.render(drawMode);
         glBindVertexArray(0);
+        // glUseProgram(0);
+
+        // glUseProgram(modelShaderProgram);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -292,6 +324,7 @@ int main() {
     }
 
     glDeleteProgram(modelShaderProgram);
+    glDeleteProgram(modelShaderProgram2);
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -300,7 +333,7 @@ int main() {
     return 0;
 }
 
-//also camera rotation
+//input get callback camera rotation
 static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
 {
     if (inWindow && holdingRMB) {
