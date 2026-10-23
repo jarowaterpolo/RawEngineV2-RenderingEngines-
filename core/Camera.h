@@ -49,6 +49,7 @@ class Camera {
         void LookAt();
         void RotateOnX(float angleDegrees);
         void RotateOnY(float angleDegrees);
+        void Translate(glm::vec3 translationDirection, float currentInput);
         void UpdateAspectRatio(float aspectRatio);
         void UpdateCameraVectors();
 };

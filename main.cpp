@@ -9,6 +9,7 @@
 #include "core/assimpLoader.h"
 #include "core/texture.h"
 #include "core/Camera.h"
+#include "core/LightObject.h"
 
 //#define MAC_CLION
 #define VSTUDIO
@@ -33,6 +34,9 @@ int g_height = 600;
 //JJN Vars
 float aspectRatio = float(g_width) / float(g_height);
 Camera camera(aspectRatio);
+glm::vec3 lightPos = glm::vec3(0.0f, 3.0f, 30.0f);
+glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+LightObject lightObject(lightPos, lightColor);
 bool inWindow = false;
 bool holdingRMB = false;
 static double lastX = 0.0;
@@ -222,11 +226,19 @@ int main() {
     //my own added shaders + model
     GLint mvpMatrixUniform2 = glGetUniformLocation(modelShaderProgram2, "mvpMatrix2");
 
+    //lighting
+    GLint light0colorUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].color");
+    GLint light0positionUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].position");
+    GLint light0ambientIntensityUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].ambientIntensity");
+    GLint light0cameraPositionUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].cameraPos");
+    GLint light0specularIntensityUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].specularIntensity");
+
+
     double currentTime = glfwGetTime();
     double finishFrameTime = 0.0;
     float rotationStrength = 100.0f;
     double Xpos, Ypos;
-    
+
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -280,7 +292,16 @@ int main() {
 
         glUseProgram(modelShaderProgram);
         glUniform1f(colorMultUniformLocation, colorMult);
-        glUniform4f(uniformColorLocation, uniformColor.r, uniformColor.g, uniformColor.b, uniformColor.a);
+        glUniform4f(uniformColorLocation, uniformColor.r, uniformColor.g, uniformColor.b, 1);
+        //light
+        glUniform4fv(light0colorUniformLocation, 1, &lightObject.GetColor()[0]);
+        // printf("lightObject color = (%f,%f,%f,%f) \n", lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
+        // printf("%i set to color (%f,%f,%f,%f)\n", light0colorUniformLocation, lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
+        glUniform3fv(light0positionUniformLocation, 1, &lightPos[0]);
+        glUniform1f(light0ambientIntensityUniformLocation, 0.2f);
+        glUniform3fv(light0cameraPositionUniformLocation, 1, &camera.GetPos()[0]);
+        glUniform1f(light0specularIntensityUniformLocation, 256.0f);
+
         glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * suzanne.getModelMatrix()));
         suzanne.render(drawMode);
         // glBindVertexArray(0);
@@ -288,11 +309,20 @@ int main() {
         glm::mat4 offsetMatrix = glm::mat4(1,0,0,0,
                                             0,1,0,0,
                                             0,0,1,0,
-                                            2,0,0,1);
+                                            3,0,0,1);
 
         glUseProgram(modelShaderProgram);
         glUniform1f(colorMultUniformLocation, colorMult);
         glUniform4f(uniformColorLocation, uniformColor.r, uniformColor.g, uniformColor.b, uniformColor.a);
+        //light
+        glUniform4fv(light0colorUniformLocation, 1, &lightObject.GetColor()[0]);
+        // printf("lightObject color = (%f,%f,%f,%f) \n", lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
+        // printf("%i set to color (%f,%f,%f,%f)\n", light0colorUniformLocation, lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
+        glUniform3fv(light0positionUniformLocation, 1, &lightPos[0]);
+        glUniform1f(light0ambientIntensityUniformLocation, 0.2f);
+        glUniform3fv(light0cameraPositionUniformLocation, 1, &camera.GetPos()[0]);
+
+        glUniform1f(light0specularIntensityUniformLocation, 256.0f);
 
         glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * suzanne.getModelMatrix() * offsetMatrix));
         suzanne.render(drawMode);

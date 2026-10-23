@@ -19,6 +19,8 @@ set(IMGUI_SOURCES
         core/texture.h
         core/Camera.cpp
         core/Camera.h
+        core/LightObject.cpp
+        core/LightObject.h
 )
 
 add_executable(RawEngine main.cpp

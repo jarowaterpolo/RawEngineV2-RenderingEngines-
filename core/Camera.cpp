@@ -103,34 +103,34 @@ void Camera::RotateOnY(float angleDegrees)
 
     UpdateCameraVectors();
 }
+void Camera::Translate(glm::vec3 translationDirection, float currentInput)
+{
+    position += translationDirection * currentInput;
+    target += translationDirection * currentInput;
+}
+
 void Camera::Input(GLFWwindow *window, float deltaTime)
 {
     float currentInput = cameraMoveSpeed * cameraSpeedUpMult * deltaTime;
-    printf("cameraMoveSpeed = %f, DeltaTime = %f, currentInput = %f \n", cameraMoveSpeed * cameraSpeedUpMult, deltaTime, currentInput);
+    // printf("cameraMoveSpeed = %f, DeltaTime = %f, currentInput = %f \n", cameraMoveSpeed * cameraSpeedUpMult, deltaTime, currentInput);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        position += direction * currentInput;
-        target += direction * currentInput;
+        Translate(direction, currentInput);
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        position -= direction * currentInput;
-        target -= direction * currentInput;
+        Translate(-direction, currentInput);
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        position -= right * currentInput;
-        target -= right * currentInput;
+        Translate(-right, currentInput);
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        position += right * currentInput;
-        target += right * currentInput;
+        Translate(right, currentInput);
     }
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-        position += up * currentInput;
-        target += up * currentInput;
+        Translate(up, currentInput);
     }
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-        position -= up * currentInput;
-        target -= up * currentInput;
+        Translate(-up, currentInput);
     }
     if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
         if (FOV > 30) {
