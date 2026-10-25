@@ -47,11 +47,15 @@ float colorMult = 0.0f;
 glm::vec4 uniformColor = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 glm::vec4 uniformColor2 = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 float deltaTime = 0.0f;
+float modelSpecularIntensity = 1.0f;
 
 //https://www.youtube.com/watch?v=EE5cS8EMT78 Cursor & Mouse callbacks
 static void cursorPosCallback(GLFWwindow *window, double xpos, double ypos);
 void cursorEnterCallback(GLFWwindow *window, int entered);
 void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
+void DrawModel(const unsigned int modelShaderProgram, core::Model model, glm::mat4 offsetMatrix, GLint colorMultUniformLocation, GLint uniformColorLocation,
+    GLint light0colorUniformLocation, GLint light0positionUniformLocation, GLint light0ambientIntensityUniformLocation,
+    GLint light0cameraPositionUniformLocation, GLint light0specularIntensityUniformLocation, GLint mvpMatrixUniform);
 void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
@@ -206,6 +210,7 @@ int main() {
 
     //my own model
     core::Model cube = core::AssimpLoader::loadModel("models/RandoCubeForRenderingEngines2.obj");
+    core::Model lightSphere = core::AssimpLoader::loadModel("models/LightTestSphere.obj");
 
     // camera.RotateOnX(45);
     // camera.RotateOnY(45);
@@ -271,6 +276,9 @@ int main() {
         if (ImGui::ColorPicker3("Color_My_Model", glm::value_ptr(uniformColor2))) {
 
         }
+        if (ImGui::DragFloat ("Specular_Intensity_Monke", &modelSpecularIntensity, 1)) {
+
+        }
         ImGui::End();
 
         processInput(window);
@@ -300,7 +308,7 @@ int main() {
         glUniform3fv(light0positionUniformLocation, 1, &lightPos[0]);
         glUniform1f(light0ambientIntensityUniformLocation, 0.2f);
         glUniform3fv(light0cameraPositionUniformLocation, 1, &camera.GetPos()[0]);
-        glUniform1f(light0specularIntensityUniformLocation, 256.0f);
+        glUniform1f(light0specularIntensityUniformLocation, modelSpecularIntensity);
 
         glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * suzanne.getModelMatrix()));
         suzanne.render(drawMode);
@@ -344,6 +352,32 @@ int main() {
         // glUseProgram(0);
 
         // glUseProgram(modelShaderProgram);
+        offsetMatrix += glm::mat4(1,0,0,0,
+                                            0,1,0,0,
+                                            0,0,1,0,
+                                            3,0,0,1);
+
+        DrawModel(modelShaderProgram, lightSphere, offsetMatrix,
+            colorMultUniformLocation, uniformColorLocation,light0colorUniformLocation, light0positionUniformLocation,
+            light0ambientIntensityUniformLocation, light0cameraPositionUniformLocation, light0specularIntensityUniformLocation,
+            mvpMatrixUniform);
+        // glUseProgram(modelShaderProgram);
+        // glUniform1f(colorMultUniformLocation, colorMult);
+        // glUniform4f(uniformColorLocation, uniformColor.r, uniformColor.g, uniformColor.b, 1);
+        // //light
+        // glUniform4fv(light0colorUniformLocation, 1, &lightObject.GetColor()[0]);
+        // // printf("lightObject color = (%f,%f,%f,%f) \n", lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
+        // // printf("%i set to color (%f,%f,%f,%f)\n", light0colorUniformLocation, lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
+        // glUniform3fv(light0positionUniformLocation, 1, &lightPos[0]);
+        // glUniform1f(light0ambientIntensityUniformLocation, 0.2f);
+        // glUniform3fv(light0cameraPositionUniformLocation, 1, &camera.GetPos()[0]);
+        // glUniform1f(light0specularIntensityUniformLocation, apeSpecularIntensity);
+        //
+        // glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * lightSphere.getModelMatrix() * offsetMatrix));
+        // lightSphere.render(drawMode);
+        // // glBindVertexArray(0);
+
+
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -363,6 +397,30 @@ int main() {
 
     glfwTerminate();
     return 0;
+}
+
+//drawModel
+void DrawModel(const unsigned int modelShaderProgram, core::Model model, glm::mat4 offsetMatrix, GLint colorMultUniformLocation, GLint uniformColorLocation,
+    GLint light0colorUniformLocation, GLint light0positionUniformLocation, GLint light0ambientIntensityUniformLocation,
+    GLint light0cameraPositionUniformLocation, GLint light0specularIntensityUniformLocation, GLint mvpMatrixUniform)
+{
+    glUseProgram(modelShaderProgram);
+    glUniform1f(colorMultUniformLocation, colorMult);
+    glUniform4f(uniformColorLocation, uniformColor.r, uniformColor.g, uniformColor.b, 1);
+    //light
+    if (light0colorUniformLocation != -1) {
+        glUniform4fv(light0colorUniformLocation, 1, &lightObject.GetColor()[0]);
+        // printf("lightObject color = (%f,%f,%f,%f) \n", lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
+        // printf("%i set to color (%f,%f,%f,%f)\n", light0colorUniformLocation, lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
+        glUniform3fv(light0positionUniformLocation, 1, &lightPos[0]);
+        glUniform1f(light0ambientIntensityUniformLocation, 0.2f);
+        glUniform3fv(light0cameraPositionUniformLocation, 1, &camera.GetPos()[0]);
+        glUniform1f(light0specularIntensityUniformLocation, modelSpecularIntensity);
+    }
+
+    glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * model.getModelMatrix() * offsetMatrix));
+    model.render(drawMode);
+    // glBindVertexArray(0);
 }
 
 //input get callback camera rotation

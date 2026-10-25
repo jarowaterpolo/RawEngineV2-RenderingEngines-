@@ -19,23 +19,27 @@ uniform Light lights[20];
 
 void main()
 {
+    //a
     vec4 ambientColor = lights[0].ambientIntensity * lights[0].color * uniformColor;
     ambientColor.a = 1.0f;
+    //d
     vec3 direction = fPos - lights[0].position;
     direction = normalize(direction);
     vec3 normal = normalize(fNor);
     vec4 diffuseColor = max(dot(direction, -normal), 0.0f) * lights[0].color * uniformColor;
-    vec3 reflectedRay = reflect(direction, normal);
+    //s
+    vec3 reflectedRay = reflect(-direction, normal);
     vec3 view = normalize(fPos - lights[0].cameraPos);
     vec4 sCol = vec4(1,1,1,1);
-    vec4 specularColor = pow(max(dot(reflectedRay, view), 0.0f), lights[0].specularIntensity) * sCol * uniformColor;
+//    vec4 specularColor = pow(max(dot(reflectedRay, view), 0.0f), lights[0].specularIntensity) * lights[0].color * uniformColor;
+    vec4 specularColor = pow(max(dot(reflectedRay, view), 0.0f), lights[0].specularIntensity) * lights[0].color;
 
     FragColor = ambientColor + diffuseColor + specularColor;
 //    FragColor = lights[0].color;
 //    FragColor = lights[0].position;
 //    FragColor = ambientColor;
 //    FragColor = diffuseColor;
-//    FragColor = specularColor;
+//    FragColor = uniformColor + specularColor;
 
 //   FragColor = vec4(fNor.x, fNor.y, fNor.z, 1);
 //   FragColor = uniformColor;
