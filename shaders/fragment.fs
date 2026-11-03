@@ -24,9 +24,10 @@ void main()
     ambientColor.a = 1.0f;
     //d
     vec3 direction = fPos - lights[0].position;
-    direction = normalize(direction);
-    vec3 normal = normalize(fNor);
-    vec4 diffuseColor = max(dot(direction, -normal), 0.0f) * lights[0].color * uniformColor;
+        direction = normalize(direction);
+    vec3 normal = fNor;
+        normal = normalize(normal);
+    vec4 diffuseColor = max(dot(normalize(direction), -normal), 0.0f) * lights[0].color * uniformColor;
     //s
     vec3 reflectedRay = reflect(-direction, normal);
     vec3 view = normalize(fPos - lights[0].cameraPos);
