@@ -7,8 +7,8 @@
 #include <glm/fwd.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 
-
-class Transform {
+namespace core {
+    class Transform {
     private:
         glm::mat4 transformMatrix;
 
@@ -28,7 +28,7 @@ class Transform {
         void Rotate(glm::vec3 rotation);
         void Scale(glm::vec3 scale);
         glm::mat4 getTransformMatrix() const;
-};
-
+    };
+}
 
 #endif //RAWENGINE_TRANSFORM_H

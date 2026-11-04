@@ -6,10 +6,11 @@
 #define RAWENGINE_GAMEOBJECT_H
 #include "Transform.h"
 
-
-class GameObject {
-    Transform transform;
-};
+namespace core {
+    class GameObject {
+        Transform transform;
+    };
+}
 
 
 #endif //RAWENGINE_GAMEOBJECT_H

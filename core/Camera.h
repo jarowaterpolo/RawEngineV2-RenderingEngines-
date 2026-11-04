@@ -12,28 +12,28 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/transform.hpp>
 
-
-class Camera {
-    //base
-    glm::vec3 position = glm::vec3(0.0f, 0.0f, 10.0f);
-    glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 direction = glm::normalize(position - target);
-    glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 right = glm::normalize(glm::cross(worldUp, direction));
-    glm::vec3 up = glm::cross(direction, right);
-    //extra
-    float cameraMoveSpeed;
-    float cameraSpeedUpMult;
-    float FOV;
-    float aspectRatio;
-    float clipNear;
-    float clipFar;
-    //matrices
-    glm::mat4 view;
-    glm::mat4 projection = glm::perspective(glm::radians(FOV), aspectRatio, clipNear, clipFar);
-    //rotation
-    float totalRotationOnX;
-    float totalRotationOnY;
+namespace core {
+    class Camera {
+        //base
+        glm::vec3 position = glm::vec3(0.0f, 0.0f, 10.0f);
+        glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 direction = glm::normalize(position - target);
+        glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 right = glm::normalize(glm::cross(worldUp, direction));
+        glm::vec3 up = glm::cross(direction, right);
+        //extra
+        float cameraMoveSpeed;
+        float cameraSpeedUpMult;
+        float FOV;
+        float aspectRatio;
+        float clipNear;
+        float clipFar;
+        //matrices
+        glm::mat4 view;
+        glm::mat4 projection = glm::perspective(glm::radians(FOV), aspectRatio, clipNear, clipFar);
+        //rotation
+        float totalRotationOnX;
+        float totalRotationOnY;
 
     public:
         Camera(float aspectRatio);
@@ -52,6 +52,7 @@ class Camera {
         void Translate(glm::vec3 translationDirection, float currentInput);
         void UpdateAspectRatio(float aspectRatio);
         void UpdateCameraVectors();
-};
+    };
+}
 
 #endif //RAWENGINE_CAMERA_H

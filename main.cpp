@@ -33,10 +33,10 @@ int g_height = 600;
 
 //JJN Vars
 float aspectRatio = float(g_width) / float(g_height);
-Camera camera(aspectRatio);
+core::Camera camera(aspectRatio);
 glm::vec3 lightPos = glm::vec3(0.0f, 3.0f, 30.0f);
 glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-LightObject lightObject(lightPos, lightColor);
+core::LightObject lightObject(lightPos, lightColor);
 bool inWindow = false;
 bool holdingRMB = false;
 static double lastX = 0.0;

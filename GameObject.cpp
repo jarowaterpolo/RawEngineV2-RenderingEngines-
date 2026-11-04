@@ -3,3 +3,7 @@
 //
 
 #include "GameObject.h"
+
+namespace core {
+
+}

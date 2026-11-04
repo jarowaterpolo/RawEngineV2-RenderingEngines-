@@ -7,18 +7,18 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
-
-class LightObject {
-private:
-        glm::vec3 position{};
-        glm::vec4 color{};
-public:
-        LightObject(glm::vec3 position, glm::vec3 color);
-        ~LightObject();
-        LightObject& operator=(const LightObject &anotherLightObject);
-        glm::vec3 GetPos()const;
-        glm::vec4 GetColor()const;
-};
-
+namespace core {
+        class LightObject {
+        private:
+                glm::vec3 position{};
+                glm::vec4 color{};
+        public:
+                LightObject(glm::vec3 position, glm::vec3 color);
+                ~LightObject();
+                LightObject& operator=(const LightObject &anotherLightObject);
+                glm::vec3 GetPos()const;
+                glm::vec4 GetColor()const;
+        };
+}
 
 #endif //RAWENGINE_LIGHTOBJECT_H
