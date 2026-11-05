@@ -8,6 +8,7 @@
 
 namespace core {
     class GameObject {
+    public:
         Transform transform;
     };
 }

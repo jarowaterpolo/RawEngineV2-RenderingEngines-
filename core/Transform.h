@@ -11,10 +11,6 @@ namespace core {
     class Transform {
     private:
         glm::mat4 transformMatrix;
-
-        glm::mat4 translateMatrix;
-        glm::mat4 rotateMatrix;
-        glm::mat4 scaleMatrix;
     public:
         Transform();
         Transform(glm::vec3 positon, glm::vec3 rotation, glm::vec3 scale);
@@ -25,9 +21,10 @@ namespace core {
 
 
         void Translate(glm::vec3 translation);
-        void Rotate(glm::vec3 rotation);
+        void Rotate(glm::vec3 axis, float radians);
         void Scale(glm::vec3 scale);
         glm::mat4 getTransformMatrix() const;
+        glm::vec3 getPosition() const;
     };
 }
 

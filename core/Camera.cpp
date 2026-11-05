@@ -4,16 +4,16 @@
 
 #include "Camera.h"
 
+#include <ios>
+
 namespace core {
     Camera::Camera(float aspectRatio)
     {
         //base
-        position = glm::vec3(0.0f, 0.0f, 10.0f);
+        transform = Transform(glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(0.0f), glm::vec3(1.0f));
         target = glm::vec3(0.0f, 0.0f, 0.0f);
-        direction = glm::normalize(position - target);
         worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
-        right = glm::normalize(glm::cross(worldUp, direction));
-        up = glm::cross(direction, right);
+        UpdateCameraVectors();
         //extra
         FOV = 45.0f;
         clipNear = 0.1f;
@@ -23,54 +23,50 @@ namespace core {
     }
     Camera::Camera(float aspectRatio, glm::vec3 cameraPos, glm::vec3 cameraTarget, float FOV, float clipNear, float clipFar)
     {
-        this->position = cameraPos;
+        this->transform = Transform(cameraPos, glm::vec3(0), glm::vec3(1));
         this->target = cameraTarget;
-        direction = glm::normalize(cameraPos - cameraTarget);
         worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
-        right = glm::normalize(glm::cross(worldUp, direction));
-        up = glm::cross(direction, right);
+         UpdateCameraVectors();
         //extra
         this->aspectRatio = aspectRatio;
         this->FOV = FOV;
         this->clipNear = clipNear;
         this->clipFar = clipFar;
-        cameraMoveSpeed = 20.0f;
+        cameraMoveSpeed = 10.0f;
     }
     glm::vec3 Camera::GetPos()
     {
-        return position;
+        return transform.getPosition();
     }
-    glm::vec3 Camera::GetTarget()
+    glm::vec3 Camera::GetTarget() const
     {
-        return target;
+        return transform.getPosition() + GetForward();
     }
     glm::vec3 Camera::GetUp()
     {
         return up;
     }
-    glm::mat4 Camera::GetViewMatrix()
+    glm::vec3 Camera::GetForward() const
     {
-        return view;
+        return glm::normalize(transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));
     }
-    glm::mat4 Camera::GetProjectionMatrix()
+    glm::mat4 Camera::GetViewMatrix() const
     {
-        return projection;
+        return glm::lookAt(transform.getPosition(),GetTarget(), up);
     }
-    void Camera::UpdateAspectRatio(float aspectRatio)
+    glm::mat4 Camera::GetProjectionMatrix(float aspectRatio) const
     {
-        this->aspectRatio = aspectRatio;
-        projection = glm::perspective(glm::radians(FOV), aspectRatio, clipNear, clipFar);
+        return glm::perspective(glm::radians(FOV), aspectRatio, clipNear, clipFar);
     }
     void Camera::UpdateCameraVectors()
     {
-        direction = glm::normalize(target - position);
+        glm::mat4 tM = transform.getTransformMatrix();
+
+        direction = glm::normalize(tM * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));
         right = glm::normalize(glm::cross(direction, worldUp));
         up = glm::normalize(glm::cross(right, direction));
-    }
-    void Camera::LookAt()
-    {
-        view = glm::lookAt(position,target, up);
-        projection = glm::perspective(glm::radians(FOV), aspectRatio, clipNear, clipFar);
+
+        target = transform.getPosition() + direction;
     }
     void Camera::RotateOnX(float angleDegrees)
     {
@@ -80,11 +76,7 @@ namespace core {
         }
         totalRotationOnX = newPitch;
 
-        glm::vec3 offset = position - target;
-        glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(angleDegrees), right);
-        offset = glm::vec3(rotation * glm::vec4(offset, 1.0f));
-
-        position = target + offset;
+        transform.Rotate(right, glm::radians(angleDegrees));
 
         UpdateCameraVectors();
     }
@@ -96,43 +88,39 @@ namespace core {
         }
         totalRotationOnY = newPitch;
 
-        glm::vec3 offset = position - target;
-        glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(angleDegrees), up);
-        offset = glm::vec3(rotation * glm::vec4(offset, 1.0f));
-
-        position = target + offset;
+        transform.Rotate(up, glm::radians(angleDegrees));
 
         UpdateCameraVectors();
     }
-    void Camera::Translate(glm::vec3 translationDirection, float currentInput)
-    {
-        position += translationDirection * currentInput;
-        target += translationDirection * currentInput;
-    }
-
     void Camera::Input(GLFWwindow *window, float deltaTime)
     {
-        float currentInput = cameraMoveSpeed * cameraSpeedUpMult * deltaTime;
-        // printf("cameraMoveSpeed = %f, DeltaTime = %f, currentInput = %f \n", cameraMoveSpeed * cameraSpeedUpMult, deltaTime, currentInput);
+        float speed = cameraMoveSpeed * cameraSpeedUpMult * deltaTime;
+        glm::vec3 translation(0.0f);
 
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-            Translate(direction, currentInput);
+            translation += direction * speed;
         }
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-            Translate(-direction, currentInput);
+            translation -= direction * speed;
         }
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-            Translate(-right, currentInput);
+            translation -= right * speed;
         }
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-            Translate(right, currentInput);
+            translation += right * speed;
         }
         if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-            Translate(up, currentInput);
+            translation += up * speed;
         }
         if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-            Translate(-up, currentInput);
+            translation -= up * speed;
         }
+
+        if (translation != glm::vec3(0.0f)) {
+            transform.Translate(translation);
+            target += translation;
+        }
+
         if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
             if (FOV > 30) {
                 FOV -= .05f;

@@ -11,9 +11,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/transform.hpp>
+#include "GameObject.h"
 
 namespace core {
-    class Camera {
+    class Camera : public GameObject {
         //base
         glm::vec3 position = glm::vec3(0.0f, 0.0f, 10.0f);
         glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -28,10 +29,6 @@ namespace core {
         float aspectRatio;
         float clipNear;
         float clipFar;
-        //matrices
-        glm::mat4 view;
-        glm::mat4 projection = glm::perspective(glm::radians(FOV), aspectRatio, clipNear, clipFar);
-        //rotation
         float totalRotationOnX;
         float totalRotationOnY;
 
@@ -40,17 +37,17 @@ namespace core {
         Camera(float aspectRatio, glm::vec3 cameraPos, glm::vec3 cameraTarget, float FOV, float clipNear, float clipFar);
 
         glm::vec3 GetPos();
-        glm::vec3 GetTarget();
+        glm::vec3 GetTarget() const;
         glm::vec3 GetUp();
-        glm::mat4 GetViewMatrix();
-        glm::mat4 GetProjectionMatrix();
+        glm::vec3 GetForward() const;
+        glm::mat4 GetViewMatrix() const;
+        glm::mat4 GetProjectionMatrix(float aspectRatio) const;
 
+        void OldInput(GLFWwindow* window, float deltaTime);
         void Input(GLFWwindow *window, float deltaTime);
-        void LookAt();
         void RotateOnX(float angleDegrees);
         void RotateOnY(float angleDegrees);
         void Translate(glm::vec3 translationDirection, float currentInput);
-        void UpdateAspectRatio(float aspectRatio);
         void UpdateCameraVectors();
     };
 }

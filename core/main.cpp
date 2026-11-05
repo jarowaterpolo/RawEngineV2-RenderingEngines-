@@ -5,11 +5,11 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-#include "core/mesh.h"
-#include "core/assimpLoader.h"
-#include "core/texture.h"
-#include "core/Camera.h"
-#include "core/LightObject.h"
+#include "mesh.h"
+#include "assimpLoader.h"
+#include "texture.h"
+#include "Camera.h"
+#include "LightObject.h"
 
 //#define MAC_CLION
 #define VSTUDIO
@@ -70,7 +70,6 @@ void framebufferSizeCallback(GLFWwindow *window,
     g_height = height;
     glViewport(0, 0, width, height);
     aspectRatio = float(g_width) / float(g_height);
-    camera.UpdateAspectRatio(aspectRatio);
 }
 
 std::string readFileToString(const std::string &filePath) {
@@ -285,12 +284,11 @@ int main() {
         suzanne.rotate(glm::vec3(0.0f, 1.0f, 0.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
         cube.rotate(glm::vec3(0.0f, 1.0f, 1.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
 
-        camera.LookAt();
         glfwGetCursorPos(window, &Xpos, &Ypos);
 
 
         glUseProgram(textureShaderProgram);
-        glUniformMatrix4fv(textureModelUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * quadModel.getModelMatrix()));
+        glUniformMatrix4fv(textureModelUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * quadModel.getModelMatrix()));
         glActiveTexture(GL_TEXTURE0);
         glUniform1i(textureUniform, 0);
         glBindTexture(GL_TEXTURE_2D, cmgtGatoTexture.getId());
@@ -310,7 +308,7 @@ int main() {
         glUniform3fv(light0cameraPositionUniformLocation, 1, &camera.GetPos()[0]);
         glUniform1f(light0specularIntensityUniformLocation, modelSpecularIntensity);
 
-        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * suzanne.getModelMatrix()));
+        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * suzanne.getModelMatrix()));
         suzanne.render(drawMode);
         // glBindVertexArray(0);
 
@@ -332,7 +330,7 @@ int main() {
 
         glUniform1f(light0specularIntensityUniformLocation, 256.0f);
 
-        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * suzanne.getModelMatrix() * offsetMatrix));
+        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * suzanne.getModelMatrix() * offsetMatrix));
         suzanne.render(drawMode);
         glBindVertexArray(0);
 
@@ -346,7 +344,7 @@ int main() {
         glUseProgram(modelShaderProgram2);
         glUniform1f(colorMultUniformLocation, colorMult);
         glUniform4f(uniformColorLocation2, uniformColor2.r, uniformColor2.g, uniformColor2.b, uniformColor2.a);
-        glUniformMatrix4fv(mvpMatrixUniform2, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * cube.getModelMatrix() * offsetMatrix));
+        glUniformMatrix4fv(mvpMatrixUniform2, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * cube.getModelMatrix() * offsetMatrix));
         cube.render(drawMode);
         glBindVertexArray(0);
         // glUseProgram(0);
@@ -418,7 +416,7 @@ void DrawModel(const unsigned int modelShaderProgram, core::Model model, glm::ma
         glUniform1f(light0specularIntensityUniformLocation, modelSpecularIntensity);
     }
 
-    glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * model.getModelMatrix() * offsetMatrix));
+    glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * model.getModelMatrix() * offsetMatrix));
     model.render(drawMode);
     // glBindVertexArray(0);
 }
@@ -442,10 +440,13 @@ static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
         lastX = xpos;
         lastY = ypos;
 
-        float sensitivity = 0.2f;
+        float sensitivity =
+            0.2f;
+                // 1.0f;
         xoffset *= sensitivity;
         yoffset *= sensitivity;
 
+        printf("trying to rotate %f degrees on y and %f degrees on x\n", xoffset, yoffset);
         camera.RotateOnX(yoffset);
         camera.RotateOnY(xoffset);
     }
