@@ -25,6 +25,8 @@ set(IMGUI_SOURCES
         core/GameObject.h
         core/Transform.cpp
         core/Transform.h
+        InputHandler.cpp
+        InputHandler.h
 )
 
 add_executable(RawEngine core/main.cpp
