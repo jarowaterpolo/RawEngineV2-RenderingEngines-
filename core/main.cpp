@@ -10,6 +10,7 @@
 #include "texture.h"
 #include "Camera.h"
 #include "LightObject.h"
+#include "InputHandler.h"
 
 //#define MAC_CLION
 #define VSTUDIO
@@ -37,22 +38,14 @@ core::Camera camera(aspectRatio);
 glm::vec3 lightPos = glm::vec3(0.0f, 3.0f, 30.0f);
 glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 core::LightObject lightObject(lightPos, lightColor);
-bool inWindow = false;
-bool holdingRMB = false;
-static double lastX = 0.0;
-static double lastY = 0.0;
-static bool firstMouse = true;
 GLenum drawMode = GL_TRIANGLES;
 float colorMult = 0.0f;
 glm::vec4 uniformColor = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 glm::vec4 uniformColor2 = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 float deltaTime = 0.0f;
 float modelSpecularIntensity = 1.0f;
+core::InputHandler inputHandler;
 
-//https://www.youtube.com/watch?v=EE5cS8EMT78 Cursor & Mouse callbacks
-static void cursorPosCallback(GLFWwindow *window, double xpos, double ypos);
-void cursorEnterCallback(GLFWwindow *window, int entered);
-void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
 void DrawModel(const unsigned int modelShaderProgram, core::Model model, glm::mat4 offsetMatrix, GLint colorMultUniformLocation, GLint uniformColorLocation,
     GLint light0colorUniformLocation, GLint light0positionUniformLocation, GLint light0ambientIntensityUniformLocation,
     GLint light0cameraPositionUniformLocation, GLint light0specularIntensityUniformLocation, GLint mvpMatrixUniform);
@@ -61,8 +54,7 @@ void processInput(GLFWwindow *window) {
         glfwSetWindowShouldClose(window, true);
 
     //JJNInput
-    //camera
-    camera.Input(window, deltaTime);
+    inputHandler.Input(window, deltaTime);
 }
 void framebufferSizeCallback(GLFWwindow *window,
                              int width, int height) {
@@ -116,16 +108,9 @@ int main() {
         return -1;
     }
 
-    //JJN get cursor pos setter
-    glfwSetCursorPosCallback(window, cursorPosCallback);
-    //disable cursor
-    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    //when cursor enter setter
-    glfwSetCursorEnterCallback(window, cursorEnterCallback);
-    //mouse button setter
-    glfwSetMouseButtonCallback(window, mouseButtonCallback);
-    //sticky key keep track of a button press that might have happend in the same poll
-    glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, 1);
+    inputHandler.SetCamera(&camera);
+    inputHandler.SetWindow(window);
+    inputHandler.SetupCallBacks();
 
     glfwMakeContextCurrent(window);
 
@@ -419,63 +404,4 @@ void DrawModel(const unsigned int modelShaderProgram, core::Model model, glm::ma
     glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * model.getModelMatrix() * offsetMatrix));
     model.render(drawMode);
     // glBindVertexArray(0);
-}
-
-//input get callback camera rotation
-static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
-{
-    if (inWindow && holdingRMB) {
-        if (firstMouse) {
-            lastX = xpos;
-            lastY = ypos;
-            firstMouse = false;
-        }
-
-        printf("cursorPosCallback\n");
-        printf("pos = (%f,%f)\n", xpos, ypos);
-
-        float xoffset = lastX - xpos;
-        float yoffset = lastY - ypos;
-
-        lastX = xpos;
-        lastY = ypos;
-
-        float sensitivity =
-            0.2f;
-                // 1.0f;
-        xoffset *= sensitivity;
-        yoffset *= sensitivity;
-
-        printf("trying to rotate %f degrees on y and %f degrees on x\n", xoffset, yoffset);
-        camera.RotateOnX(yoffset);
-        camera.RotateOnY(xoffset);
-    }
-    else {
-        firstMouse = true;
-    }
-}
-void cursorEnterCallback(GLFWwindow *window, int entered)
-{
-    if (entered) {
-        printf("entered window\n");
-        inWindow = true;
-    }
-    else {
-        printf("left window\n");
-        inWindow = false;
-    }
-}
-void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
-{
-    if (inWindow) {
-        if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-            printf("right mouse button pressed\n");
-            holdingRMB = true;
-        }
-
-        if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
-            printf("right mouse button released\n");
-            holdingRMB = false;
-        }
-    }
 }

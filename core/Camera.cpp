@@ -4,8 +4,6 @@
 
 #include "Camera.h"
 
-#include <ios>
-
 namespace core {
     Camera::Camera(float aspectRatio)
     {
@@ -42,13 +40,17 @@ namespace core {
     {
         return transform.getPosition() + GetForward();
     }
-    glm::vec3 Camera::GetUp()
-    {
-        return up;
-    }
     glm::vec3 Camera::GetForward() const
     {
         return glm::normalize(transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));
+    }
+    glm::vec3 Camera::GetRight() const
+    {
+        return right;
+    }
+    glm::vec3 Camera::GetUp() const
+    {
+        return up;
     }
     glm::mat4 Camera::GetViewMatrix() const
     {
@@ -62,11 +64,11 @@ namespace core {
     {
         glm::mat4 tM = transform.getTransformMatrix();
 
-        direction = glm::normalize(tM * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));
-        right = glm::normalize(glm::cross(direction, worldUp));
-        up = glm::normalize(glm::cross(right, direction));
+        forward = glm::normalize(tM * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));
+        right = glm::normalize(glm::cross(forward, worldUp));
+        up = glm::normalize(glm::cross(right, forward));
 
-        target = transform.getPosition() + direction;
+        target = transform.getPosition() + forward;
     }
     void Camera::RotateOnX(float angleDegrees)
     {
@@ -92,51 +94,4 @@ namespace core {
 
         UpdateCameraVectors();
     }
-    void Camera::Input(GLFWwindow *window, float deltaTime)
-    {
-        float speed = cameraMoveSpeed * cameraSpeedUpMult * deltaTime;
-        glm::vec3 translation(0.0f);
-
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-            translation += direction * speed;
-        }
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-            translation -= direction * speed;
-        }
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-            translation -= right * speed;
-        }
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-            translation += right * speed;
-        }
-        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-            translation += up * speed;
-        }
-        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-            translation -= up * speed;
-        }
-
-        if (translation != glm::vec3(0.0f)) {
-            transform.Translate(translation);
-            target += translation;
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
-            if (FOV > 30) {
-                FOV -= .05f;
-            }
-        }
-        if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
-            if (FOV < 120) {
-                FOV += .05f;
-            }
-        }
-        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-            cameraSpeedUpMult = 2.5f;
-        }
-        else {
-            cameraSpeedUpMult = 1.0f;
-        }
-    }
 }
-
