@@ -78,8 +78,8 @@ namespace core {
         }
         totalRotationOnX = newPitch;
 
-        transform.Rotate(right, glm::radians(angleDegrees));
-
+        transform.OldRotate(right, glm::radians(angleDegrees));
+        // transform.Rotate(glm::vec3(angleDegrees, 0.0f, 0.0f));
         UpdateCameraVectors();
     }
     void Camera::RotateOnY(float angleDegrees)
@@ -90,7 +90,8 @@ namespace core {
         }
         totalRotationOnY = newPitch;
 
-        transform.Rotate(up, glm::radians(angleDegrees));
+        transform.OldRotate(up, glm::radians(angleDegrees));
+        // transform.Rotate(glm::vec3(0.0f, angleDegrees, 0.0f));
 
         UpdateCameraVectors();
     }

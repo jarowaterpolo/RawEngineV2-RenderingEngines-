@@ -9,8 +9,8 @@ namespace core {
     {
         this->position = position;
         this->color = glm::vec4(color, 1.0f);
-        printf("position set to (%f,%f,%f)\n", position.x, position.y, position.z);
-        printf("color set to (%f,%f,%f,%f)\n", color.r, color.g, color.b, 1.0f);
+        // printf("position set to (%f,%f,%f)\n", position.x, position.y, position.z);
+        // printf("color set to (%f,%f,%f,%f)\n", color.r, color.g, color.b, 1.0f);
 
     }
     LightObject::~LightObject() = default;

@@ -13,27 +13,26 @@ namespace core {
         this->scale = glm::vec3(1.0f, 1.0f, 1.0f);
     }
 
-    Transform::Transform(glm::vec3 positon, glm::vec3 rotation, glm::vec3 scale): transformMatrix(1)
+    Transform::Transform(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale): transformMatrix(1)
     {
-        this->position = positon;
+        this->position = position;
         this->rotation = rotation;
         this->scale = scale;
 
         transformMatrix = glm::mat4(1.0f);
-        Translate(positon);
+        printf("using pos transform and set to (%f,%f,%f)\n", position.x, position.y, position.z);
+        Translate(position);
         Scale(scale);
-        Rotate(glm::vec3(0.0f,0.0f, 1.0f), glm::radians(rotation.z));
-        Rotate(glm::vec3(0.0f,1.0f, 0.0f), glm::radians(rotation.y));
-        Rotate(glm::vec3(1.0f,0.0f, 0.0f), glm::radians(rotation.x));
+        Rotate(rotation);
     }
 
     void Transform::Translate(glm::vec3 translation) {
-        transformMatrix[3] += glm::vec4(translation, 0.0f);
-        // translateMatrix = glm::translate(transformMatrix, translation);
-        position = glm::vec3(transformMatrix[3]);
+        position += translation;
+        translateMatrix = glm::translate(transformMatrix, position);
+        printf("pos is now (%f,%f,%f)\n", position.x, position.y, position.z);
     }
 
-    void Transform::Rotate(glm::vec3 axis, float radians) {
+    void Transform::OldRotate(glm::vec3 axis, float radians) {
         transformMatrix = glm::rotate(transformMatrix, radians, axis);
 
         if (axis == glm::vec3(0.0f, 0.0f, 1.0f)) {
@@ -47,18 +46,29 @@ namespace core {
         }
     }
 
+    void Transform::Rotate(const glm::vec3 rotationInDegrees)
+    {
+        rotateMatrix = glm::rotate(transformMatrix, glm::radians(rotationInDegrees.x), glm::vec3(1.0f, 0.0f, 0.0f)) *
+                glm::rotate(transformMatrix, glm::radians(rotationInDegrees.y), glm::vec3(0.0f, 1.0f, 0.0f)) *
+                glm::rotate(transformMatrix, glm::radians(rotationInDegrees.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+        rotation += rotationInDegrees;
+    }
+
     void Transform::Scale(glm::vec3 scale) {
-        transformMatrix = glm::scale(transformMatrix, scale);
+        scaleMatrix = glm::scale(transformMatrix, scale);
 
         this->scale = glm::vec3(transformMatrix[0][0], transformMatrix[1][1], transformMatrix[2][2]);
     }
 
     glm::mat4 Transform::getTransformMatrix() const {
-        return this->transformMatrix;
+        return this->translateMatrix*rotateMatrix*scaleMatrix;
     }
 
     glm::vec3 Transform::getPosition() const
     {
-        return glm::vec3(transformMatrix[3]);
+        glm::mat4 combinedMat = getTransformMatrix();
+        printf("pos received = (%f,%f,%f)\n", combinedMat[3][0], combinedMat[3][1], combinedMat[3][2]);
+        return glm::vec3(combinedMat[3]);
     }
 }

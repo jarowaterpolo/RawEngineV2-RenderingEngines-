@@ -24,7 +24,8 @@ namespace core {
 
 
         void Translate(glm::vec3 translation);
-        void Rotate(glm::vec3 axis, float radians);
+        void OldRotate(glm::vec3 axis, float radians);
+        void Rotate(glm::vec3 rotation);
         void Scale(glm::vec3 scale);
         glm::mat4 getTransformMatrix() const;
         glm::vec3 getPosition() const;
