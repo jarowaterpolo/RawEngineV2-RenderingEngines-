@@ -48,7 +48,7 @@ core::InputHandler inputHandler;
 
 void DrawModel(const unsigned int modelShaderProgram, core::Model model, glm::mat4 offsetMatrix, GLint colorMultUniformLocation, GLint uniformColorLocation,
     GLint light0colorUniformLocation, GLint light0positionUniformLocation, GLint light0ambientIntensityUniformLocation,
-    GLint light0cameraPositionUniformLocation, GLint light0specularIntensityUniformLocation, GLint mvpMatrixUniform);
+    GLint light0cameraPositionUniformLocation, GLint light0specularIntensityUniformLocation, float specularIntensity, GLint mMatrixUniform, GLint mvpMatrixUniform);
 void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
@@ -195,6 +195,7 @@ int main() {
     //my own model
     core::Model cube = core::AssimpLoader::loadModel("models/RandoCubeForRenderingEngines2.obj");
     core::Model lightSphere = core::AssimpLoader::loadModel("models/LightTestSphere.obj");
+    // lightSphere.scale(glm::vec3(5, 5, 1));
 
     // camera.RotateOnX(45);
     // camera.RotateOnY(45);
@@ -209,6 +210,7 @@ int main() {
     GLuint uniformColorLocation2 = glGetUniformLocation(modelShaderProgram2, "uniformColor");
 
     GLint mvpMatrixUniform = glGetUniformLocation(modelShaderProgram, "mvpMatrix");
+    GLint mMatrixUniform = glGetUniformLocation(modelShaderProgram, "mMatrix");
     GLint textureModelUniform = glGetUniformLocation(textureShaderProgram, "mvpMatrix");
     GLint textureUniform = glGetUniformLocation(textureShaderProgram, "text");
 
@@ -237,13 +239,13 @@ int main() {
         ImGui::Begin("Raw Engine v2");
         ImGui::Text("Hello :)");
         ImGui::Text("Im Jaro");
-        if (ImGui::Button("Make something appear", ImVec2(200, 60)))
-        {
-            printf("Clicked\n");
-            if (colorMult < 1.0f) {
-            colorMult += 0.01f;
-            }
-        };
+        // if (ImGui::Button("Make something appear", ImVec2(200, 60)))
+        // {
+        //     printf("Clicked\n");
+        //     if (colorMult < 1.0f) {
+        //     colorMult += 0.01f;
+        //     }
+        // };
         //wireframe button
         if (ImGui::Button("Toggle Wireframe", ImVec2(120, 60))) {
             if (drawMode == GL_TRIANGLES) {
@@ -253,14 +255,19 @@ int main() {
                 drawMode = GL_TRIANGLES;
             }
         }
+        ImGui::End();
 
+        ImGui::Begin("Monke");
         if (ImGui::ColorPicker3("Color_Monkey", glm::value_ptr(uniformColor))) {
 
         }
-        if (ImGui::ColorPicker3("Color_My_Model", glm::value_ptr(uniformColor2))) {
+        if (ImGui::DragFloat ("Specular_Intensity_Monke", &modelSpecularIntensity, 1)) {
 
         }
-        if (ImGui::DragFloat ("Specular_Intensity_Monke", &modelSpecularIntensity, 1)) {
+        ImGui::End();
+
+        ImGui::Begin("My Model");
+        if (ImGui::ColorPicker3("Color_My_Model", glm::value_ptr(uniformColor2))) {
 
         }
         ImGui::End();
@@ -281,49 +288,28 @@ int main() {
         glBindVertexArray(0);
         glActiveTexture(GL_TEXTURE0);
 
-        glUseProgram(modelShaderProgram);
-        glUniform1f(colorMultUniformLocation, colorMult);
-        glUniform4f(uniformColorLocation, uniformColor.r, uniformColor.g, uniformColor.b, 1);
-        //light
-        glUniform4fv(light0colorUniformLocation, 1, &lightObject.GetColor()[0]);
-        // printf("lightObject color = (%f,%f,%f,%f) \n", lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
-        // printf("%i set to color (%f,%f,%f,%f)\n", light0colorUniformLocation, lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
-        glUniform3fv(light0positionUniformLocation, 1, &lightPos[0]);
-        glUniform1f(light0ambientIntensityUniformLocation, 0.2f);
-        glUniform3fv(light0cameraPositionUniformLocation, 1, &camera.GetPos()[0]);
-        glUniform1f(light0specularIntensityUniformLocation, modelSpecularIntensity);
 
-        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * suzanne.getModelMatrix()));
-        suzanne.render(drawMode);
-        // glBindVertexArray(0);
-
+        //first model(monke)
         glm::mat4 offsetMatrix = glm::mat4(1,0,0,0,
                                             0,1,0,0,
                                             0,0,1,0,
-                                            3,0,0,1);
+                                            0,0,0,1);
 
-        glUseProgram(modelShaderProgram);
-        glUniform1f(colorMultUniformLocation, colorMult);
-        glUniform4f(uniformColorLocation, uniformColor.r, uniformColor.g, uniformColor.b, uniformColor.a);
-        //light
-        glUniform4fv(light0colorUniformLocation, 1, &lightObject.GetColor()[0]);
-        // printf("lightObject color = (%f,%f,%f,%f) \n", lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
-        // printf("%i set to color (%f,%f,%f,%f)\n", light0colorUniformLocation, lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
-        glUniform3fv(light0positionUniformLocation, 1, &lightPos[0]);
-        glUniform1f(light0ambientIntensityUniformLocation, 0.2f);
-        glUniform3fv(light0cameraPositionUniformLocation, 1, &camera.GetPos()[0]);
+        DrawModel(modelShaderProgram, suzanne, offsetMatrix,
+        colorMultUniformLocation, uniformColorLocation,light0colorUniformLocation, light0positionUniformLocation,
+        light0ambientIntensityUniformLocation, light0cameraPositionUniformLocation, light0specularIntensityUniformLocation,
+        modelSpecularIntensity ,mMatrixUniform ,mvpMatrixUniform);
 
-        glUniform1f(light0specularIntensityUniformLocation, 256.0f);
+        offsetMatrix[3] += glm::vec4(3,0,1,0);
 
-        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * suzanne.getModelMatrix() * offsetMatrix));
-        suzanne.render(drawMode);
+        DrawModel(modelShaderProgram, suzanne, offsetMatrix,
+        colorMultUniformLocation, uniformColorLocation,light0colorUniformLocation, light0positionUniformLocation,
+        light0ambientIntensityUniformLocation, light0cameraPositionUniformLocation, light0specularIntensityUniformLocation,
+        256.0f ,mMatrixUniform ,mvpMatrixUniform);
+
         glBindVertexArray(0);
 
-        offsetMatrix += glm::mat4(0,0,0,0,
-                                    0,0,0,0,
-                                    0,0,0,0,
-                                    2,0,0,0);
-
+        offsetMatrix[3] += glm::vec4(2,0,0,0);
 
         // my own added model and shaders
         glUseProgram(modelShaderProgram2);
@@ -331,36 +317,14 @@ int main() {
         glUniform4f(uniformColorLocation2, uniformColor2.r, uniformColor2.g, uniformColor2.b, uniformColor2.a);
         glUniformMatrix4fv(mvpMatrixUniform2, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * cube.getModelMatrix() * offsetMatrix));
         cube.render(drawMode);
-        glBindVertexArray(0);
-        // glUseProgram(0);
+        // glBindVertexArray(0);
 
-        // glUseProgram(modelShaderProgram);
-        offsetMatrix += glm::mat4(1,0,0,0,
-                                            0,1,0,0,
-                                            0,0,1,0,
-                                            3,0,0,1);
+        offsetMatrix[3] += glm::vec4(3,0,0,1);
 
         DrawModel(modelShaderProgram, lightSphere, offsetMatrix,
             colorMultUniformLocation, uniformColorLocation,light0colorUniformLocation, light0positionUniformLocation,
             light0ambientIntensityUniformLocation, light0cameraPositionUniformLocation, light0specularIntensityUniformLocation,
-            mvpMatrixUniform);
-        // glUseProgram(modelShaderProgram);
-        // glUniform1f(colorMultUniformLocation, colorMult);
-        // glUniform4f(uniformColorLocation, uniformColor.r, uniformColor.g, uniformColor.b, 1);
-        // //light
-        // glUniform4fv(light0colorUniformLocation, 1, &lightObject.GetColor()[0]);
-        // // printf("lightObject color = (%f,%f,%f,%f) \n", lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
-        // // printf("%i set to color (%f,%f,%f,%f)\n", light0colorUniformLocation, lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
-        // glUniform3fv(light0positionUniformLocation, 1, &lightPos[0]);
-        // glUniform1f(light0ambientIntensityUniformLocation, 0.2f);
-        // glUniform3fv(light0cameraPositionUniformLocation, 1, &camera.GetPos()[0]);
-        // glUniform1f(light0specularIntensityUniformLocation, apeSpecularIntensity);
-        //
-        // glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix() * camera.GetViewMatrix() * lightSphere.getModelMatrix() * offsetMatrix));
-        // lightSphere.render(drawMode);
-        // // glBindVertexArray(0);
-
-
+            modelSpecularIntensity, mMatrixUniform, mvpMatrixUniform);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -385,7 +349,7 @@ int main() {
 //drawModel
 void DrawModel(const unsigned int modelShaderProgram, core::Model model, glm::mat4 offsetMatrix, GLint colorMultUniformLocation, GLint uniformColorLocation,
     GLint light0colorUniformLocation, GLint light0positionUniformLocation, GLint light0ambientIntensityUniformLocation,
-    GLint light0cameraPositionUniformLocation, GLint light0specularIntensityUniformLocation, GLint mvpMatrixUniform)
+    GLint light0cameraPositionUniformLocation, GLint light0specularIntensityUniformLocation, float specularIntensity, GLint mMatrixUniform, GLint mvpMatrixUniform)
 {
     glUseProgram(modelShaderProgram);
     glUniform1f(colorMultUniformLocation, colorMult);
@@ -398,10 +362,11 @@ void DrawModel(const unsigned int modelShaderProgram, core::Model model, glm::ma
         glUniform3fv(light0positionUniformLocation, 1, &lightPos[0]);
         glUniform1f(light0ambientIntensityUniformLocation, 0.2f);
         glUniform3fv(light0cameraPositionUniformLocation, 1, &camera.GetPos()[0]);
-        glUniform1f(light0specularIntensityUniformLocation, modelSpecularIntensity);
+        glUniform1f(light0specularIntensityUniformLocation, specularIntensity);
     }
 
+    glUniformMatrix4fv(mMatrixUniform, 1, GL_FALSE, glm::value_ptr(model.getModelMatrix()));
     glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * model.getModelMatrix() * offsetMatrix));
     model.render(drawMode);
-    // glBindVertexArray(0);
+    glBindVertexArray(0);
 }

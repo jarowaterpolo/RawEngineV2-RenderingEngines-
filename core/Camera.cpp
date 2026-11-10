@@ -8,7 +8,7 @@ namespace core {
     Camera::Camera(float aspectRatio)
     {
         //base
-        transform = Transform(glm::vec3(0.0f, 0.0f, 10.0f), glm::vec3(0.0f), glm::vec3(1.0f));
+        transform = Transform(glm::vec3(0.0f, 0.0f, 20.0f), glm::vec3(0.0f), glm::vec3(1.0f));
         target = glm::vec3(0.0f, 0.0f, 0.0f);
         worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
         UpdateCameraVectors();

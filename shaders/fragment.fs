@@ -3,8 +3,10 @@ out vec4 FragColor;
 in vec3 fPos;
 in vec3 fNor;
 in vec2 uv;
+in mat3 TBN;
 uniform float colorMult;
 uniform vec4 uniformColor;
+uniform sampler2D normalMap;
 
 struct Light{
     vec4 color;
@@ -19,6 +21,9 @@ uniform Light lights[20];
 
 void main()
 {
+    vec3 T_normal = texture(normalMap, uv).rgb;
+    T_normal = normalize(T_normal * 2.0 - 1.0);
+
     //a
     vec4 ambientColor = lights[0].ambientIntensity * lights[0].color * uniformColor;
     ambientColor.a = 1.0f;

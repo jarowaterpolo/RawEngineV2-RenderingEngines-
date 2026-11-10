@@ -29,6 +29,7 @@ namespace core {
 
     void Transform::Translate(glm::vec3 translation) {
         transformMatrix[3] += glm::vec4(translation, 0.0f);
+        // translateMatrix = glm::translate(transformMatrix, translation);
         position = glm::vec3(transformMatrix[3]);
     }
 

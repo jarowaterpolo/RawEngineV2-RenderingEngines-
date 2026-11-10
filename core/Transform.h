@@ -11,6 +11,9 @@ namespace core {
     class Transform {
     private:
         glm::mat4 transformMatrix;
+        glm::mat4 translateMatrix;
+        glm::mat4 rotateMatrix;
+        glm::mat4 scaleMatrix;
     public:
         Transform();
         Transform(glm::vec3 positon, glm::vec3 rotation, glm::vec3 scale);
