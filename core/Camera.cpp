@@ -32,7 +32,7 @@ namespace core {
         this->clipFar = clipFar;
         cameraMoveSpeed = 10.0f;
     }
-    glm::vec3 Camera::GetPos()
+    glm::vec3 Camera::GetPos() const
     {
         return transform.getPosition();
     }
@@ -72,7 +72,7 @@ namespace core {
     }
     void Camera::Rotate(glm::vec3 angleDegrees)
     {
-        printf("%f angle degrees to rotate \n", angleDegrees);
+        // printf("angle degrees is (%f,%f,%f) \n", angleDegrees.x, angleDegrees.y, angleDegrees.z);
         float newPitchX = totalRotationOnX + angleDegrees.x;
 
         if (newPitchX > 89.0f || newPitchX < -89.0f) {
@@ -89,7 +89,7 @@ namespace core {
         // transform.OldRotate(right, glm::radians(angleDegrees));
         // transform.Rotate(glm::vec3(angleDegrees, 0.0f, 0.0f));
         transform.Rotate(glm::vec3(totalRotationOnX, totalRotationOnY, 0.0f));
-        printf("rotation is (%f,%f,%f) \n", transform.getRotation().x, transform.getRotation().y, transform.getRotation().z);
+        // printf("rotation is (%f,%f,%f) \n", transform.getRotation().x, transform.getRotation().y, transform.getRotation().z);
 
         UpdateCameraVectors();
     }

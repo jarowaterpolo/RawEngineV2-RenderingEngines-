@@ -7,7 +7,7 @@
 #include "Transform.h"
 
 namespace core {
-    class GameObject {
+    class Object {
     public:
         Transform transform;
     };

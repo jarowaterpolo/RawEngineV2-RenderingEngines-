@@ -8,10 +8,10 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "GameObject.h"
+#include "Object.h"
 
 namespace core {
-    class Camera : public GameObject {
+    class Camera : public Object {
         //base
         glm::vec3 position = glm::vec3(0.0f, 0.0f, 10.0f);
         glm::vec3 forward = glm::normalize(position - target);
@@ -34,7 +34,7 @@ namespace core {
         glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
         float FOV;
 
-        glm::vec3 GetPos();
+        glm::vec3 GetPos() const;
         glm::vec3 GetTarget() const;
         glm::vec3 GetForward() const;
         glm::vec3 GetRight() const;

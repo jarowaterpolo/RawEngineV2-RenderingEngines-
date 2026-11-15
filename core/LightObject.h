@@ -6,9 +6,10 @@
 #define RAWENGINE_LIGHTOBJECT_H
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include "Object.h"
 
 namespace core {
-        class LightObject {
+        class LightObject : public Object {
         private:
                 glm::vec3 position{};
                 glm::vec4 color{};

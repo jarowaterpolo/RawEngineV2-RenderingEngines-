@@ -46,9 +46,6 @@ float deltaTime = 0.0f;
 float modelSpecularIntensity = 1.0f;
 core::InputHandler inputHandler;
 
-void DrawModel(const unsigned int modelShaderProgram, core::Model model, glm::mat4 offsetMatrix, GLint colorMultUniformLocation, GLint uniformColorLocation,
-    GLint light0colorUniformLocation, GLint light0positionUniformLocation, GLint light0ambientIntensityUniformLocation,
-    GLint light0cameraPositionUniformLocation, GLint light0specularIntensityUniformLocation, float specularIntensity, GLint mMatrixUniform, GLint mvpMatrixUniform);
 void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
@@ -140,10 +137,6 @@ int main() {
     const GLuint modelVertexShader = generateShader("shaders/modelVertex.vs", GL_VERTEX_SHADER);
     const GLuint fragmentShader = generateShader("shaders/fragment.fs", GL_FRAGMENT_SHADER);
     const GLuint textureShader = generateShader("shaders/texture.fs", GL_FRAGMENT_SHADER);
-    //my own added shaders
-    const GLuint modelVertexShader2 = generateShader("shaders/modelVertex2.vs", GL_VERTEX_SHADER);
-    const GLuint fragmentShader2 = generateShader("shaders/fragment2.fs", GL_FRAGMENT_SHADER);
-
 
     int success;
     char infoLog[512];
@@ -165,23 +158,10 @@ int main() {
         glGetProgramInfoLog(textureShaderProgram, 512, NULL, infoLog);
         printf("Error! Making Shader Program: %s\n", infoLog);
     }
-    //my own added shaders
-    const unsigned int modelShaderProgram2 = glCreateProgram();
-    glAttachShader(modelShaderProgram2, modelVertexShader2);
-    glAttachShader(modelShaderProgram2, fragmentShader2);
-    glLinkProgram(modelShaderProgram2);
-    glGetProgramiv(modelShaderProgram2, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(modelShaderProgram2, 512, NULL, infoLog);
-        printf("Error! Making Shader Program: %s\n", infoLog);
-    }
 
     glDeleteShader(modelVertexShader);
     glDeleteShader(fragmentShader);
     glDeleteShader(textureShader);
-    //my own added shaders
-    glDeleteShader(modelVertexShader2);
-    glDeleteShader(fragmentShader2);
 
     core::Mesh quad = core::Mesh::generateQuad();
     core::Model quadModel({quad});
@@ -193,7 +173,8 @@ int main() {
     core::Texture cmgtGatoTexture("textures/CMGaTo_crop.png");
 
     //my own model
-    core::Model cube = core::AssimpLoader::loadModel("models/RandoCubeForRenderingEngines2.obj");
+    // core::Model cube = core::AssimpLoader::loadModel("models/RandoCubeForRenderingEngines2.obj");
+    core::Model cube = core::AssimpLoader::loadModel("models/RandoCubeForRenderingEnginesSmooth.obj");
     core::Model lightSphere = core::AssimpLoader::loadModel("models/LightTestSphere.obj");
     // lightSphere.scale(glm::vec3(5, 5, 1));
 
@@ -207,15 +188,11 @@ int main() {
 
     GLint colorMultUniformLocation = glGetUniformLocation(modelShaderProgram, "colorMult");
     GLint uniformColorLocation = glGetUniformLocation(modelShaderProgram, "uniformColor");
-    GLuint uniformColorLocation2 = glGetUniformLocation(modelShaderProgram2, "uniformColor");
 
     GLint mvpMatrixUniform = glGetUniformLocation(modelShaderProgram, "mvpMatrix");
     GLint mMatrixUniform = glGetUniformLocation(modelShaderProgram, "mMatrix");
     GLint textureModelUniform = glGetUniformLocation(textureShaderProgram, "mvpMatrix");
     GLint textureUniform = glGetUniformLocation(textureShaderProgram, "text");
-
-    //my own added shaders + model
-    GLint mvpMatrixUniform2 = glGetUniformLocation(modelShaderProgram2, "mvpMatrix2");
 
     //lighting
     GLint light0colorUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].color");
@@ -312,10 +289,15 @@ int main() {
         offsetMatrix[3] += glm::vec4(2,0,0,0);
 
         // my own added model and shaders
-        glUseProgram(modelShaderProgram2);
+        DrawModel(modelShaderProgram, lightSphere, offsetMatrix,
+            colorMultUniformLocation, uniformColorLocation, light0colorUniformLocation, light0positionUniformLocation,
+            light0ambientIntensityUniformLocation, light0cameraPositionUniformLocation, light0specularIntensityUniformLocation,
+            modelSpecularIntensity, mMatrixUniform, mvpMatrixUniform);
+
+        glUseProgram(modelShaderProgram);
         glUniform1f(colorMultUniformLocation, colorMult);
-        glUniform4f(uniformColorLocation2, uniformColor2.r, uniformColor2.g, uniformColor2.b, uniformColor2.a);
-        glUniformMatrix4fv(mvpMatrixUniform2, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * cube.getModelMatrix() * offsetMatrix));
+        glUniform4f(uniformColorLocation, uniformColor2.r, uniformColor2.g, uniformColor2.b, uniformColor2.a);
+        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * cube.getModelMatrix() * offsetMatrix));
         cube.render(drawMode);
         // glBindVertexArray(0);
 
@@ -337,36 +319,10 @@ int main() {
     }
 
     glDeleteProgram(modelShaderProgram);
-    glDeleteProgram(modelShaderProgram2);
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
     glfwTerminate();
     return 0;
-}
-
-//drawModel
-void DrawModel(const unsigned int modelShaderProgram, core::Model model, glm::mat4 offsetMatrix, GLint colorMultUniformLocation, GLint uniformColorLocation,
-    GLint light0colorUniformLocation, GLint light0positionUniformLocation, GLint light0ambientIntensityUniformLocation,
-    GLint light0cameraPositionUniformLocation, GLint light0specularIntensityUniformLocation, float specularIntensity, GLint mMatrixUniform, GLint mvpMatrixUniform)
-{
-    glUseProgram(modelShaderProgram);
-    glUniform1f(colorMultUniformLocation, colorMult);
-    glUniform4f(uniformColorLocation, uniformColor.r, uniformColor.g, uniformColor.b, 1);
-    //light
-    if (light0colorUniformLocation != -1) {
-        glUniform4fv(light0colorUniformLocation, 1, &lightObject.GetColor()[0]);
-        // printf("lightObject color = (%f,%f,%f,%f) \n", lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
-        // printf("%i set to color (%f,%f,%f,%f)\n", light0colorUniformLocation, lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
-        glUniform3fv(light0positionUniformLocation, 1, &lightPos[0]);
-        glUniform1f(light0ambientIntensityUniformLocation, 0.2f);
-        glUniform3fv(light0cameraPositionUniformLocation, 1, &camera.GetPos()[0]);
-        glUniform1f(light0specularIntensityUniformLocation, specularIntensity);
-    }
-
-    glUniformMatrix4fv(mMatrixUniform, 1, GL_FALSE, glm::value_ptr(model.getModelMatrix()));
-    glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * model.getModelMatrix() * offsetMatrix));
-    model.render(drawMode);
-    glBindVertexArray(0);
 }
