@@ -114,8 +114,9 @@ namespace core {
             yoffset *= sensitivity;
 
             // printf("trying to rotate %f degrees on y and %f degrees on x\n", xoffset, yoffset);
-            handler->camera->RotateOnX(yoffset);
-            handler->camera->RotateOnY(xoffset);
+            // handler->camera->RotateOnX(yoffset);
+            // handler->camera->RotateOnY(xoffset);
+            handler->camera->Rotate(glm::vec3(yoffset, xoffset, 0.0f));
         }
         else {
             handler->firstMouse = true;

@@ -54,7 +54,7 @@ namespace core {
     }
     glm::mat4 Camera::GetViewMatrix() const
     {
-        return glm::lookAt(transform.getPosition(),GetTarget(), up);
+        return glm::lookAt(transform.getPosition(),transform.getPosition() + forward, up);
     }
     glm::mat4 Camera::GetProjectionMatrix(float aspectRatio) const
     {
@@ -70,28 +70,26 @@ namespace core {
 
         target = transform.getPosition() + forward;
     }
-    void Camera::RotateOnX(float angleDegrees)
+    void Camera::Rotate(glm::vec3 angleDegrees)
     {
-        float newPitch = totalRotationOnX + angleDegrees;
-        if (newPitch > 89.0f || newPitch < -89.0f) {
+        printf("%f angle degrees to rotate \n", angleDegrees);
+        float newPitchX = totalRotationOnX + angleDegrees.x;
+
+        if (newPitchX > 89.0f || newPitchX < -89.0f) {
             return;
         }
-        totalRotationOnX = newPitch;
+        totalRotationOnX = newPitchX;
 
-        transform.OldRotate(right, glm::radians(angleDegrees));
+        float newPitchY = totalRotationOnY + angleDegrees.y;
+        if (newPitchY > 179.0f || newPitchY < -179.0f) {
+            return;
+        }
+        totalRotationOnY = newPitchY;
+
+        // transform.OldRotate(right, glm::radians(angleDegrees));
         // transform.Rotate(glm::vec3(angleDegrees, 0.0f, 0.0f));
-        UpdateCameraVectors();
-    }
-    void Camera::RotateOnY(float angleDegrees)
-    {
-        float newPitch = totalRotationOnY + angleDegrees;
-        if (newPitch > 179.0f || newPitch < -179.0f) {
-            return;
-        }
-        totalRotationOnY = newPitch;
-
-        transform.OldRotate(up, glm::radians(angleDegrees));
-        // transform.Rotate(glm::vec3(0.0f, angleDegrees, 0.0f));
+        transform.Rotate(glm::vec3(totalRotationOnX, totalRotationOnY, 0.0f));
+        printf("rotation is (%f,%f,%f) \n", transform.getRotation().x, transform.getRotation().y, transform.getRotation().z);
 
         UpdateCameraVectors();
     }

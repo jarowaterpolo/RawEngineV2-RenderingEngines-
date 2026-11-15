@@ -42,8 +42,7 @@ namespace core {
         glm::mat4 GetViewMatrix() const;
         glm::mat4 GetProjectionMatrix(float aspectRatio) const;
 
-        void RotateOnX(float angleDegrees);
-        void RotateOnY(float angleDegrees);
+        void Rotate(glm::vec3 angleDegrees);
         void Translate(glm::vec3 translationDirection, float currentInput);
         void UpdateCameraVectors();
     };
