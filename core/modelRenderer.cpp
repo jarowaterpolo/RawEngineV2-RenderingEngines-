@@ -34,7 +34,8 @@ namespace core {
             glUniform4fv(light0colorUniformLocation, 1, glm::value_ptr(lightObject->GetColor()));
             // printf("lightObject color = (%f,%f,%f,%f) \n", lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
             // printf("%i set to color (%f,%f,%f,%f)\n", light0colorUniformLocation, lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
-            glUniform3fv(light0positionUniformLocation, 1, glm::value_ptr(lightObject->transform.getPosition()));
+            printf("light pos = (%f,%f,%f) \n", lightObject->GetPos().x, lightObject->GetPos().y, lightObject->GetPos().z);
+            glUniform3fv(light0positionUniformLocation, 1, glm::value_ptr(lightObject->GetPos()));
             glUniform1f(light0ambientIntensityUniformLocation, 0.2f);
             glUniform3fv(light0cameraPositionUniformLocation, 1, glm::value_ptr(camera->GetPos()));
             glUniform1f(light0specularIntensityUniformLocation, specularIntensity);

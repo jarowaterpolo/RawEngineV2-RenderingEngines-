@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+
 #include "mesh.h"
 #include "assimpLoader.h"
 #include "texture.h"
@@ -248,6 +249,12 @@ int main() {
         ImGui::Begin("My Model");
         if (ImGui::ColorPicker3("Color_My_Model", glm::value_ptr(uniformColor2))) {
 
+        }
+        ImGui::End();
+
+        ImGui::Begin("My Light");
+        if (ImGui::DragFloat3("Light Position:", glm::value_ptr(lightObject.transform.position))) {
+            model_renderer.UpdateLightObject(&lightObject);
         }
         ImGui::End();
 
