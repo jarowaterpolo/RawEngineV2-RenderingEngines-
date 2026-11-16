@@ -11,6 +11,7 @@
 #include "Camera.h"
 #include "LightObject.h"
 #include "InputHandler.h"
+#include "modelRenderer.h"
 
 //#define MAC_CLION
 #define VSTUDIO
@@ -45,6 +46,7 @@ glm::vec4 uniformColor2 = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 float deltaTime = 0.0f;
 float modelSpecularIntensity = 1.0f;
 core::InputHandler inputHandler;
+core::modelRenderer model_renderer(0, &lightObject, &camera, aspectRatio, &drawMode);
 
 void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -249,6 +251,7 @@ int main() {
         }
         ImGui::End();
 
+
         processInput(window);
         suzanne.rotate(glm::vec3(0.0f, 1.0f, 0.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
         cube.rotate(glm::vec3(0.0f, 1.0f, 1.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
@@ -272,15 +275,18 @@ int main() {
                                             0,0,1,0,
                                             0,0,0,1);
 
-        DrawModel(modelShaderProgram, suzanne, offsetMatrix,
-        colorMultUniformLocation, uniformColorLocation,light0colorUniformLocation, light0positionUniformLocation,
+        model_renderer.SetModelShaderProgram(modelShaderProgram);
+        model_renderer.UpdateLightObject(&lightObject);
+
+        model_renderer.DrawModel(suzanne, uniformColor, offsetMatrix,
+        uniformColorLocation,light0colorUniformLocation, light0positionUniformLocation,
         light0ambientIntensityUniformLocation, light0cameraPositionUniformLocation, light0specularIntensityUniformLocation,
         modelSpecularIntensity ,mMatrixUniform ,mvpMatrixUniform);
 
         offsetMatrix[3] += glm::vec4(3,0,1,0);
 
-        DrawModel(modelShaderProgram, suzanne, offsetMatrix,
-        colorMultUniformLocation, uniformColorLocation,light0colorUniformLocation, light0positionUniformLocation,
+        model_renderer.DrawModel(suzanne, uniformColor, offsetMatrix,
+        uniformColorLocation,light0colorUniformLocation, light0positionUniformLocation,
         light0ambientIntensityUniformLocation, light0cameraPositionUniformLocation, light0specularIntensityUniformLocation,
         256.0f ,mMatrixUniform ,mvpMatrixUniform);
 
@@ -289,8 +295,8 @@ int main() {
         offsetMatrix[3] += glm::vec4(2,0,0,0);
 
         // my own added model and shaders
-        DrawModel(modelShaderProgram, lightSphere, offsetMatrix,
-            colorMultUniformLocation, uniformColorLocation, light0colorUniformLocation, light0positionUniformLocation,
+        model_renderer.DrawModel(lightSphere, uniformColor, offsetMatrix,
+            uniformColorLocation, light0colorUniformLocation, light0positionUniformLocation,
             light0ambientIntensityUniformLocation, light0cameraPositionUniformLocation, light0specularIntensityUniformLocation,
             modelSpecularIntensity, mMatrixUniform, mvpMatrixUniform);
 
@@ -303,8 +309,8 @@ int main() {
 
         offsetMatrix[3] += glm::vec4(3,0,0,1);
 
-        DrawModel(modelShaderProgram, lightSphere, offsetMatrix,
-            colorMultUniformLocation, uniformColorLocation,light0colorUniformLocation, light0positionUniformLocation,
+        model_renderer.DrawModel(lightSphere, uniformColor2, offsetMatrix,
+            uniformColorLocation,light0colorUniformLocation, light0positionUniformLocation,
             light0ambientIntensityUniformLocation, light0cameraPositionUniformLocation, light0specularIntensityUniformLocation,
             modelSpecularIntensity, mMatrixUniform, mvpMatrixUniform);
 

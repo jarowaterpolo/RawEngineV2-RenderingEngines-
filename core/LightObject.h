@@ -11,7 +11,6 @@
 namespace core {
         class LightObject : public Object {
         private:
-                glm::vec3 position{};
                 glm::vec4 color{};
         public:
                 LightObject(glm::vec3 position, glm::vec3 color);
