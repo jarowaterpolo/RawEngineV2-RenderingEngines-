@@ -253,6 +253,15 @@ int main() {
         ImGui::End();
 
         ImGui::Begin("My Light");
+
+
+        //begin tab bar
+        //if begin tab item
+        //pop id
+        //end tab bar
+        //for loop for objects
+
+
         if (ImGui::DragFloat3("Light Position:", glm::value_ptr(lightObject.transform.position))) {
             model_renderer.UpdateLightObject(&lightObject);
         }
