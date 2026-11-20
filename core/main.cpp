@@ -43,7 +43,6 @@ core::LightObject lightObject(lightPos, lightColor);
 GLenum drawMode = GL_TRIANGLES;
 float colorMult = 0.0f;
 float deltaTime = 0.0f;
-float modelSpecularIntensity = 1.0f;
 core::InputHandler inputHandler;
 core::modelRenderer model_renderer(0, &lightObject, &camera, aspectRatio, &drawMode);
 std::list<core::Model> modelList;
@@ -407,22 +406,22 @@ int main() {
         model_renderer.SetModelShaderProgram(modelShaderProgram);
         model_renderer.UpdateLightObject(&lightObject);
 
-        model_renderer.DrawModel(*suzanne, offsetMatrix, modelSpecularIntensity);
+        model_renderer.DrawModel(*suzanne, offsetMatrix, suzanne->material.GetSpecularIntensity());
 
         offsetMatrix[3] += glm::vec4(3,0,1,0);
 
-        model_renderer.DrawModel(*suzanne, offsetMatrix, 256.0f);
+        model_renderer.DrawModel(*suzanne, offsetMatrix, suzanne->material.GetSpecularIntensity());
 
         offsetMatrix[3] += glm::vec4(2,0,0,0);
 
         // my own added model and shaders
-        model_renderer.DrawModel(*lightTestSphere, offsetMatrix, modelSpecularIntensity);
+        model_renderer.DrawModel(*lightTestSphere, offsetMatrix, lightTestSphere->material.GetSpecularIntensity());
 
-        model_renderer.DrawModel(*cube, offsetMatrix, modelSpecularIntensity);
+        model_renderer.DrawModel(*cube, offsetMatrix, cube->material.GetSpecularIntensity());
 
         offsetMatrix[3] += glm::vec4(3,0,0,1);
 
-        model_renderer.DrawModel(*lightTestSphere, offsetMatrix, modelSpecularIntensity);
+        model_renderer.DrawModel(*lightTestSphere, offsetMatrix, lightTestSphere->material.GetSpecularIntensity());
 
 
         // second pass framebuffer
