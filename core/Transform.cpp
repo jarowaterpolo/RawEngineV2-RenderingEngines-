@@ -6,20 +6,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace core {
-    Transform::Transform(): transformMatrix(1)
-    {
-        this->position = glm::vec3(0.0f, 0.0f, 0.0f);
-        this->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-        this->scale = glm::vec3(1.0f, 1.0f, 1.0f);
-    }
+    Transform::Transform(): translateMatrix(1), rotationQuat(1.0f,0.0f,0.0f,0.0f), rotationAroundQuat(1.0f,0.0f,0.0f,0.0f),
+    pivotOffset(0.0f), scaleMatrix(1), position(0.0f),
+    rotation(0.0f), rotationAround(0.0f), scale(1.0f) {}
 
-    Transform::Transform(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale): transformMatrix(1)
+    Transform::Transform(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale): Transform()
     {
-        this->position = position;
-        this->rotation = rotation;
-        this->scale = scale;
-
-        transformMatrix = glm::mat4(1.0f);
         // printf("using pos transform and set to (%f,%f,%f)\n", position.x, position.y, position.z);
         Translate(position);
         Scale(scale);
@@ -28,27 +20,54 @@ namespace core {
 
     void Transform::Translate(glm::vec3 translation) {
         position += translation;
-        translateMatrix = glm::translate(transformMatrix, position);
+        translateMatrix = glm::translate(glm::mat4(1.0f), position);
         // printf("pos is now (%f,%f,%f)\n", position.x, position.y, position.z);
     }
     void Transform::Rotate(const glm::vec3 rotationInDegrees)
     {
-        glm::mat4 rotX = glm::rotate(transformMatrix, glm::radians(rotationInDegrees.x), glm::vec3(1.0f, 0.0f, 0.0f));
-        glm::mat4 rotY = glm::rotate(transformMatrix, glm::radians(rotationInDegrees.y), glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 rotZ = glm::rotate(transformMatrix, glm::radians(rotationInDegrees.z), glm::vec3(0.0f, 0.0f, 1.0f));
-        rotateMatrix = rotY * rotX * rotZ;
-
         rotation += rotationInDegrees;
+        //
+        // glm::mat4 rotX = glm::rotate(glm::mat4(1.0f), glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        // glm::mat4 rotY = glm::rotate(glm::mat4(1.0f), glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        // glm::mat4 rotZ = glm::rotate(glm::mat4(1.0f), glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        glm::quat deltaQuat = glm::quat(glm::radians(rotationInDegrees));
+        rotationQuat = glm::normalize(rotationQuat * deltaQuat);
     }
 
-    void Transform::Scale(glm::vec3 scale) {
-        scaleMatrix = glm::scale(transformMatrix, scale);
+    void Transform::RotateAround(glm::vec3 rotationInDegrees, glm::vec3 offset)
+    {
+        rotationAround += rotationInDegrees;
+        pivotOffset = offset;
 
-        this->scale = glm::vec3(transformMatrix[0][0], transformMatrix[1][1], transformMatrix[2][2]);
+        glm::quat deltaQuat = glm::quat(glm::radians(rotationInDegrees));
+        rotationAroundQuat = glm::normalize(rotationAroundQuat * deltaQuat);
+    }
+
+    void Transform::Scale(glm::vec3 scaleFactor) {
+        scale *= scaleFactor;
+        scaleMatrix = glm::scale(glm::mat4(1.0f), this->scale);
+
+    }
+    void Transform::SetPosition(glm::vec3 position)
+    {
+        translateMatrix[3][0] = position.x;
+        translateMatrix[3][1] = position.y;
+        translateMatrix[3][2] = position.z;
+    }
+    void Transform::SetRotation(glm::vec3 rotationInDegrees)
+    {
+        rotation = rotationInDegrees;
+        rotationQuat = glm::normalize(glm::quat(glm::radians(rotationInDegrees)));
     }
 
     glm::mat4 Transform::getTransformMatrix() const {
-        return this->translateMatrix*rotateMatrix*scaleMatrix;
+        glm::mat4 offsetMatrix = glm::translate(glm::mat4(1.0f), pivotOffset);
+
+        return translateMatrix
+        * glm::mat4_cast(rotationAroundQuat)
+        * offsetMatrix
+        * glm::mat4_cast(rotationQuat)
+        * scaleMatrix;
     }
 
     glm::vec3 Transform::getPosition() const

@@ -52,8 +52,8 @@ namespace core {
             glUniform1f(light0specularIntensityUniformLocation, specularIntensity);
         }
 
-        glUniformMatrix4fv(mMatrixUniform, 1, GL_FALSE, glm::value_ptr(model.getModelMatrix() * offsetMatrix));
-        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera->GetProjectionMatrix(aspectRatio) * camera->GetViewMatrix() * model.getModelMatrix() * offsetMatrix));
+        glUniformMatrix4fv(mMatrixUniform, 1, GL_FALSE, glm::value_ptr(model.transform.getTransformMatrix() * offsetMatrix));
+        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera->GetProjectionMatrix(aspectRatio) * camera->GetViewMatrix() * model.transform.getTransformMatrix() * offsetMatrix));
         model.render(*drawMode);
         glBindVertexArray(0);
     }

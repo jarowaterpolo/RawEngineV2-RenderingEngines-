@@ -88,7 +88,7 @@ namespace core {
 
         // transform.OldRotate(right, glm::radians(angleDegrees));
         // transform.Rotate(glm::vec3(angleDegrees, 0.0f, 0.0f));
-        transform.Rotate(glm::vec3(totalRotationOnX, totalRotationOnY, 0.0f));
+        transform.SetRotation(glm::vec3(totalRotationOnX, totalRotationOnY, 0.0f));
         // printf("rotation is (%f,%f,%f) \n", transform.getRotation().x, transform.getRotation().y, transform.getRotation().z);
 
         UpdateCameraVectors();

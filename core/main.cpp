@@ -37,7 +37,7 @@ int g_height = 600;
 //JJN Vars
 float aspectRatio = float(g_width) / float(g_height);
 core::Camera camera(aspectRatio);
-glm::vec3 lightPos = glm::vec3(0.0f, 3.0f, 30.0f);
+glm::vec3 lightPos = glm::vec3(0.0f, 3.0f, 5.0f);
 glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 core::LightObject lightObject(lightPos, lightColor);
 GLenum drawMode = GL_TRIANGLES;
@@ -53,6 +53,7 @@ core::Model* Instantiate(core::Model);
     unsigned int textureColorbuffer;
     unsigned int rbo;
 glm::ivec4 framebufferEffects;
+int effectAmount = 6;
 glm::vec4 framebufferAdditionColor = glm::vec4(0.0f,0.0f,0.2f,0.0f);
 glm::vec4 framebufferMultColor = glm::vec4(1.0f,1.0f,0.2f,1.0f);
 //unsigned int fbo;
@@ -144,6 +145,16 @@ void ImGuiTab(core::Model* model)
     {
         if (ImGui::TreeNode("Transform"))
         {
+            glm::vec3 newPos = model->transform.getPosition();
+            if (ImGui::DragFloat3("Position", &newPos[0]))
+            {
+                model->transform.SetPosition(newPos);
+            }
+            glm::vec3 newRot = model->transform.getRotation();
+            if (ImGui::InputFloat3("Rotation", &newRot[0]))
+            {
+                model->transform.SetRotation(newRot);
+            }
             ImGui::TreePop();
         }
         if (ImGui::TreeNode("Material")) {
@@ -252,16 +263,21 @@ int main() {
     #pragma region load models ---
     core::Mesh quad = core::Mesh::generateQuad();
     core::Model quadModel({quad});
-    quadModel.translate(glm::vec3(0,0,-2.5));
-    quadModel.scale(glm::vec3(5, 5, 1));
+    quadModel.transform.Translate(glm::vec3(0,0,-5));
+    quadModel.transform.Scale(glm::vec3(5, 5, 1));
     // quadModel.rotate(glm::vec3(0,0,1), glm::radians(180.0f));
     quadModel.SetName("QuadModel");
 
     core::Model suz = core::AssimpLoader::loadModel("models/nonormalmonkey.obj");
     core::Model* suzanne = Instantiate(suz);
+    core::Model* suzanne2 = Instantiate(suz);
     suzanne->material.SetColor(glm::vec4(0.6f,.3f,0.0f,1.0f));
+    suzanne2->material.SetColor(glm::vec4(0.6f,.3f,0.0f,1.0f));
     core::Texture cmgtGatoTexture("textures/CMGaTo_crop.png");
     suzanne->SetName("Monke");
+    suzanne2->SetName("Monke2");
+    suzanne->material.SetSpecularIntensity(1e6);
+    suzanne2->material.SetSpecularIntensity(1e6);
 
     //my own model
     // core::Model cube = core::AssimpLoader::loadModel("models/RandoCubeForRenderingEngines2.obj");
@@ -272,9 +288,28 @@ int main() {
 
     core::Model LTS = core::AssimpLoader::loadModel("models/LightTestSphere.obj");
     core::Model* lightTestSphere = Instantiate(LTS);
+    core::Model* lightTestSphere2 = Instantiate(LTS);
+    core::Model* lightTestSphere3 = Instantiate(LTS);
+    core::Model* lightTestSphere4 = Instantiate(LTS);
     lightTestSphere->SetName("LightTestSphere");
+    lightTestSphere2->SetName("LightTestSphere2");
+    lightTestSphere3->SetName("LightTestSphere3");
+    lightTestSphere4->SetName("LightTestSphere4");
     lightTestSphere->material.SetColor(glm::vec4(0.0f, 0.5f, 1.0f, 1.0f));
+    lightTestSphere2->material.SetColor(glm::vec4(0.0f, 0.5f, 1.0f, 1.0f));
+    lightTestSphere3->material.SetColor(glm::vec4(0.0f, 0.5f, 1.0f, 1.0f));
+    lightTestSphere4->material.SetColor(glm::vec4(0.0f, 0.5f, 1.0f, 1.0f));
     // lightSphere.scale(glm::vec3(5, 5, 1));
+
+    //set positions
+        // suzanne2->transform.Translate(glm::vec3(3,0,1));
+        lightTestSphere->transform.Translate(glm::vec3(-8,0,1));
+        lightTestSphere2->transform.Translate(glm::vec3(8,0,1));
+        lightTestSphere3->transform.Translate(glm::vec3(0,8,1));
+        lightTestSphere4->transform.Translate(glm::vec3(0,-8,1));
+        // cube->transform.Translate(glm::vec3(5,0,2));
+
+
 
     core::Mesh screenQuad = core::Mesh::generateQuad();
     core::Model screenQuadModel({quad});
@@ -347,7 +382,9 @@ int main() {
 
         ImGui::BeginTabBar("Lightining");
         if (ImGui::BeginTabItem("My Light")) {
-            if (ImGui::DragFloat3("Light Position:", glm::value_ptr(lightObject.transform.position))) {
+            glm::vec3 newPos = lightObject.transform.getPosition();
+            if (ImGui::DragFloat3("Light Position:", value_ptr(newPos))) {
+                lightObject.transform.SetPosition(newPos);
                 model_renderer.UpdateLightObject(&lightObject);
             }
             // ImGui::PopID();
@@ -358,10 +395,10 @@ int main() {
         ImGui::BeginTabBar("FrameBuffers");
         if (ImGui::BeginTabItem("My FrameBuffer")) {
             if (ImGui::InputInt4("Iteration:", glm::value_ptr(framebufferEffects))) {
-                framebufferEffects[0] = std::clamp(framebufferEffects[0], 0, 4);
-                framebufferEffects[1] = std::clamp(framebufferEffects[1], 0, 4);
-                framebufferEffects[2] = std::clamp(framebufferEffects[2], 0, 4);
-                framebufferEffects[3] = std::clamp(framebufferEffects[3], 0, 4);
+                framebufferEffects[0] = std::clamp(framebufferEffects[0], 0, effectAmount);
+                framebufferEffects[1] = std::clamp(framebufferEffects[1], 0, effectAmount);
+                framebufferEffects[2] = std::clamp(framebufferEffects[2], 0, effectAmount);
+                framebufferEffects[3] = std::clamp(framebufferEffects[3], 0, effectAmount);
             }
             if (ImGui::ColorEdit3("AdditionColor:", glm::value_ptr(framebufferAdditionColor)))
             {
@@ -377,18 +414,18 @@ int main() {
         ImGui::EndTabBar();
         ImGui::End();
 
-
-
-
         processInput(window);
-        suzanne->rotate(glm::vec3(0.0f, 1.0f, 0.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
-        cube->rotate(glm::vec3(0.0f, 1.0f, 1.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
+
+        suzanne->transform.Rotate(glm::vec3(0.0f, rotationStrength * deltaTime, 0.0f));
+        suzanne2->transform.RotateAround(glm::vec3(0.0f, rotationStrength * deltaTime, 0.0f), glm::vec3(3.0f, 0.0f, 0.0f));
+        suzanne2->transform.Rotate(glm::vec3(0.0f, rotationStrength * deltaTime, 0.0f));
+        cube->transform.RotateAround(glm::vec3(0.0f, rotationStrength * deltaTime, rotationStrength * deltaTime), glm::vec3(5.0f, 0.0f, 2.0f));
 
         glfwGetCursorPos(window, &Xpos, &Ypos);
 
 
         glUseProgram(textureShaderProgram);
-        glUniformMatrix4fv(textureModelUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * quadModel.getModelMatrix()));
+        glUniformMatrix4fv(textureModelUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * quadModel.transform.getTransformMatrix()));
         glActiveTexture(GL_TEXTURE0);
         glUniform1i(textureUniform, 0);
         glBindTexture(GL_TEXTURE_2D, cmgtGatoTexture.getId());
@@ -407,21 +444,13 @@ int main() {
         model_renderer.UpdateLightObject(&lightObject);
 
         model_renderer.DrawModel(*suzanne, offsetMatrix, suzanne->material.GetSpecularIntensity());
-
-        offsetMatrix[3] += glm::vec4(3,0,1,0);
-
-        model_renderer.DrawModel(*suzanne, offsetMatrix, suzanne->material.GetSpecularIntensity());
-
-        offsetMatrix[3] += glm::vec4(2,0,0,0);
-
+        model_renderer.DrawModel(*suzanne2, offsetMatrix, suzanne->material.GetSpecularIntensity());
         // my own added model and shaders
-        model_renderer.DrawModel(*lightTestSphere, offsetMatrix, lightTestSphere->material.GetSpecularIntensity());
-
         model_renderer.DrawModel(*cube, offsetMatrix, cube->material.GetSpecularIntensity());
-
-        offsetMatrix[3] += glm::vec4(3,0,0,1);
-
         model_renderer.DrawModel(*lightTestSphere, offsetMatrix, lightTestSphere->material.GetSpecularIntensity());
+        model_renderer.DrawModel(*lightTestSphere2, offsetMatrix, lightTestSphere->material.GetSpecularIntensity());
+        model_renderer.DrawModel(*lightTestSphere3, offsetMatrix, lightTestSphere->material.GetSpecularIntensity());
+        model_renderer.DrawModel(*lightTestSphere4, offsetMatrix, lightTestSphere->material.GetSpecularIntensity());
 
 
         // second pass framebuffer
