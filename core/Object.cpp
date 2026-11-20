@@ -5,5 +5,8 @@
 #include "Object.h"
 
 namespace core {
-
+    void Object::SetName(std::string name)
+    {
+        this->name = name;
+    }
 }

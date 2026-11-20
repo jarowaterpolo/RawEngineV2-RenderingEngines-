@@ -3,9 +3,10 @@
 #include <vector>
 #include <glm/ext/matrix_float4x4.hpp>
 #include "mesh.h"
+#include "object.h"
 
 namespace core {
-    class Model {
+    class Model : public Object {
     private:
         std::vector<core::Mesh> meshes;
         glm::mat4 modelMatrix;
@@ -17,6 +18,7 @@ namespace core {
         void translate(glm::vec3 translation);
         void rotate(glm::vec3 axis, float radians);
         void scale(glm::vec3 scale);
+
         glm::mat4 getModelMatrix() const;
     };
 }

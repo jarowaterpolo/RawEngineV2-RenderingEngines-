@@ -5,7 +5,6 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-
 #include "mesh.h"
 #include "assimpLoader.h"
 #include "texture.h"
@@ -13,6 +12,7 @@
 #include "LightObject.h"
 #include "InputHandler.h"
 #include "modelRenderer.h"
+#include <list>
 
 //#define MAC_CLION
 #define VSTUDIO
@@ -42,13 +42,60 @@ glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 core::LightObject lightObject(lightPos, lightColor);
 GLenum drawMode = GL_TRIANGLES;
 float colorMult = 0.0f;
-glm::vec4 uniformColor = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-glm::vec4 uniformColor2 = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 float deltaTime = 0.0f;
 float modelSpecularIntensity = 1.0f;
 core::InputHandler inputHandler;
 core::modelRenderer model_renderer(0, &lightObject, &camera, aspectRatio, &drawMode);
+std::list<core::Model> modelList;
+core::Model* Instantiate(core::Model);
+//check renderdoc
+//framebuffer
+    unsigned int framebuffer;
+    unsigned int textureColorbuffer;
+    unsigned int rbo;
+glm::ivec4 framebufferEffects;
+glm::vec4 framebufferAdditionColor = glm::vec4(0.0f,0.0f,0.2f,0.0f);
+glm::vec4 framebufferMultColor = glm::vec4(1.0f,1.0f,0.2f,1.0f);
+//unsigned int fbo;
+//glGenFramebuffers(1, &fbo);
+//glBindFrameBuffer(GL_FRAMEBUFFER, fbo);
 
+void CreateFrameBuffers()
+{
+    //start framebuffer setup
+    //create framebuffer
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    //create texture color buffer
+
+    // generate texture
+    glGenTextures(1, &textureColorbuffer);
+    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, g_width, g_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // attach it to currently bound framebuffer object
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+
+    //create rendering buffer object
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, g_width, g_height);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    //lookup stencil buffer
+
+    //attach to rbo
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        printf("ERROR::FRAMEBUFFER:: Framebuffer is not complete! \n");
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    //End frame buffer setup
+}
 void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
@@ -62,6 +109,7 @@ void framebufferSizeCallback(GLFWwindow *window,
     g_height = height;
     glViewport(0, 0, width, height);
     aspectRatio = float(g_width) / float(g_height);
+    CreateFrameBuffers();
 }
 
 std::string readFileToString(const std::string &filePath) {
@@ -89,6 +137,28 @@ GLuint generateShader(const std::string &shaderPath, GLuint shaderType) {
         printf("Error! Shader issue [%s]: %s\n", shaderPath.c_str(), infoLog);
     }
     return shader;
+}
+
+void ImGuiTab(core::Model* model)
+{
+    if (ImGui::CollapsingHeader(model->GetName().c_str()))
+    {
+        if (ImGui::TreeNode("Transform"))
+        {
+            ImGui::TreePop();
+        }
+        if (ImGui::TreeNode("Material")) {
+            glm::vec4 newColor = model->material.GetColor();
+            if (ImGui::ColorEdit3("_Color", &newColor[0])) {
+                model->material.SetColor(newColor);
+            }
+            float newSpecularIntensity = model->material.GetSpecularIntensity();
+            if (ImGui::InputFloat ("_Specular_Intensity", &newSpecularIntensity, 1)) {
+                model->material.SetSpecularIntensity(newSpecularIntensity);
+            }
+            ImGui::TreePop();
+        }
+    }
 }
 
 int main() {
@@ -140,6 +210,9 @@ int main() {
     const GLuint modelVertexShader = generateShader("shaders/modelVertex.vs", GL_VERTEX_SHADER);
     const GLuint fragmentShader = generateShader("shaders/fragment.fs", GL_FRAGMENT_SHADER);
     const GLuint textureShader = generateShader("shaders/texture.fs", GL_FRAGMENT_SHADER);
+    //frame buffer shaders
+    const GLint fbVertexShader = generateShader("shaders/vertex.vs", GL_VERTEX_SHADER);
+    const GLint fbFragmentShader = generateShader("shaders/fbFragment.fs", GL_FRAGMENT_SHADER);
 
     int success;
     char infoLog[512];
@@ -162,48 +235,70 @@ int main() {
         printf("Error! Making Shader Program: %s\n", infoLog);
     }
 
+    //framebuffer program
+    const unsigned int frameBufferShaderProgram = glCreateProgram();
+    glAttachShader(frameBufferShaderProgram, fbVertexShader);
+    glAttachShader(frameBufferShaderProgram, fbFragmentShader);
+    glLinkProgram(frameBufferShaderProgram);
+    glGetProgramiv(frameBufferShaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(frameBufferShaderProgram, 512, NULL, infoLog);
+        printf("Error! Making Shader Program: %s\n", infoLog);
+    }
+
     glDeleteShader(modelVertexShader);
     glDeleteShader(fragmentShader);
     glDeleteShader(textureShader);
 
+    #pragma region load models ---
     core::Mesh quad = core::Mesh::generateQuad();
     core::Model quadModel({quad});
     quadModel.translate(glm::vec3(0,0,-2.5));
     quadModel.scale(glm::vec3(5, 5, 1));
     // quadModel.rotate(glm::vec3(0,0,1), glm::radians(180.0f));
+    quadModel.SetName("QuadModel");
 
-    core::Model suzanne = core::AssimpLoader::loadModel("models/nonormalmonkey.obj");
+    core::Model suz = core::AssimpLoader::loadModel("models/nonormalmonkey.obj");
+    core::Model* suzanne = Instantiate(suz);
+    suzanne->material.SetColor(glm::vec4(0.6f,.3f,0.0f,1.0f));
     core::Texture cmgtGatoTexture("textures/CMGaTo_crop.png");
+    suzanne->SetName("Monke");
 
     //my own model
     // core::Model cube = core::AssimpLoader::loadModel("models/RandoCubeForRenderingEngines2.obj");
-    core::Model cube = core::AssimpLoader::loadModel("models/RandoCubeForRenderingEnginesSmooth.obj");
-    core::Model lightSphere = core::AssimpLoader::loadModel("models/LightTestSphere.obj");
+    core::Model box = core::AssimpLoader::loadModel("models/RandoCubeForRenderingEnginesSmooth.obj");
+    core::Model* cube = Instantiate(box);
+    cube->material.SetColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+    cube->SetName("Cube");
+
+    core::Model LTS = core::AssimpLoader::loadModel("models/LightTestSphere.obj");
+    core::Model* lightTestSphere = Instantiate(LTS);
+    lightTestSphere->SetName("LightTestSphere");
+    lightTestSphere->material.SetColor(glm::vec4(0.0f, 0.5f, 1.0f, 1.0f));
     // lightSphere.scale(glm::vec3(5, 5, 1));
 
-    // camera.RotateOnX(45);
-    // camera.RotateOnY(45);
+    core::Mesh screenQuad = core::Mesh::generateQuad();
+    core::Model screenQuadModel({quad});
+    #pragma  endregion
+
     camera.UpdateCameraVectors();
 
     glm::vec4 clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
     glClearColor(clearColor.r,
                  clearColor.g, clearColor.b, clearColor.a);
 
-    GLint colorMultUniformLocation = glGetUniformLocation(modelShaderProgram, "colorMult");
-    GLint uniformColorLocation = glGetUniformLocation(modelShaderProgram, "uniformColor");
+    // GLint colorMultUniformLocation = glGetUniformLocation(modelShaderProgram, "colorMult");
 
-    GLint mvpMatrixUniform = glGetUniformLocation(modelShaderProgram, "mvpMatrix");
-    GLint mMatrixUniform = glGetUniformLocation(modelShaderProgram, "mMatrix");
     GLint textureModelUniform = glGetUniformLocation(textureShaderProgram, "mvpMatrix");
     GLint textureUniform = glGetUniformLocation(textureShaderProgram, "text");
 
-    //lighting
-    GLint light0colorUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].color");
-    GLint light0positionUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].position");
-    GLint light0ambientIntensityUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].ambientIntensity");
-    GLint light0cameraPositionUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].cameraPos");
-    GLint light0specularIntensityUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].specularIntensity");
+    //framebuffer locations
+    GLint sceneTextureUniform = glGetUniformLocation(frameBufferShaderProgram, "scene");
+    GLint fbEffectsUniform = glGetUniformLocation(frameBufferShaderProgram, "effects");
+    GLint fbAdditionColorUniform = glGetUniformLocation(frameBufferShaderProgram, "additionColor");
+    GLint fbMultColorUniform = glGetUniformLocation(frameBufferShaderProgram, "multColor");
 
+    CreateFrameBuffers();
 
     double currentTime = glfwGetTime();
     double finishFrameTime = 0.0;
@@ -211,14 +306,16 @@ int main() {
     double Xpos, Ypos;
 
     while (!glfwWindowShouldClose(window)) {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // first pass of framebuffer
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // we're not using the stencil buffer now
+        glEnable(GL_DEPTH_TEST);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGui::Begin("Raw Engine v2");
-        ImGui::Text("Hello :)");
-        ImGui::Text("Im Jaro");
         // if (ImGui::Button("Make something appear", ImVec2(200, 60)))
         // {
         //     printf("Clicked\n");
@@ -235,42 +332,58 @@ int main() {
                 drawMode = GL_TRIANGLES;
             }
         }
+
+        ImGui::BeginTabBar("Hierarchy");
+        if (ImGui::BeginTabItem("Models")) {
+            int i = 0;
+            for (core::Model& model : modelList) {
+                ImGui::PushID(i);
+                ImGuiTab(&model);
+                ImGui::PopID();
+                i++;
+            }
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+
+        ImGui::BeginTabBar("Lightining");
+        if (ImGui::BeginTabItem("My Light")) {
+            if (ImGui::DragFloat3("Light Position:", glm::value_ptr(lightObject.transform.position))) {
+                model_renderer.UpdateLightObject(&lightObject);
+            }
+            // ImGui::PopID();
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+
+        ImGui::BeginTabBar("FrameBuffers");
+        if (ImGui::BeginTabItem("My FrameBuffer")) {
+            if (ImGui::InputInt4("Iteration:", glm::value_ptr(framebufferEffects))) {
+                framebufferEffects[0] = std::clamp(framebufferEffects[0], 0, 4);
+                framebufferEffects[1] = std::clamp(framebufferEffects[1], 0, 4);
+                framebufferEffects[2] = std::clamp(framebufferEffects[2], 0, 4);
+                framebufferEffects[3] = std::clamp(framebufferEffects[3], 0, 4);
+            }
+            if (ImGui::ColorEdit3("AdditionColor:", glm::value_ptr(framebufferAdditionColor)))
+            {
+                framebufferAdditionColor.a = 1.0f;
+            }
+            if (ImGui::ColorEdit3("MultColor:", glm::value_ptr(framebufferMultColor)))
+            {
+                framebufferMultColor.a = 1.0f;
+            }
+            // ImGui::PopID();
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
         ImGui::End();
 
-        ImGui::Begin("Monke");
-        if (ImGui::ColorPicker3("Color_Monkey", glm::value_ptr(uniformColor))) {
 
-        }
-        if (ImGui::DragFloat ("Specular_Intensity_Monke", &modelSpecularIntensity, 1)) {
-
-        }
-        ImGui::End();
-
-        ImGui::Begin("My Model");
-        if (ImGui::ColorPicker3("Color_My_Model", glm::value_ptr(uniformColor2))) {
-
-        }
-        ImGui::End();
-
-        ImGui::Begin("My Light");
-
-
-        //begin tab bar
-        //if begin tab item
-        //pop id
-        //end tab bar
-        //for loop for objects
-
-
-        if (ImGui::DragFloat3("Light Position:", glm::value_ptr(lightObject.transform.position))) {
-            model_renderer.UpdateLightObject(&lightObject);
-        }
-        ImGui::End();
 
 
         processInput(window);
-        suzanne.rotate(glm::vec3(0.0f, 1.0f, 0.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
-        cube.rotate(glm::vec3(0.0f, 1.0f, 1.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
+        suzanne->rotate(glm::vec3(0.0f, 1.0f, 0.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
+        cube->rotate(glm::vec3(0.0f, 1.0f, 1.0f), glm::radians(rotationStrength) * static_cast<float>(deltaTime));
 
         glfwGetCursorPos(window, &Xpos, &Ypos);
 
@@ -294,41 +407,39 @@ int main() {
         model_renderer.SetModelShaderProgram(modelShaderProgram);
         model_renderer.UpdateLightObject(&lightObject);
 
-        model_renderer.DrawModel(suzanne, uniformColor, offsetMatrix,
-        uniformColorLocation,light0colorUniformLocation, light0positionUniformLocation,
-        light0ambientIntensityUniformLocation, light0cameraPositionUniformLocation, light0specularIntensityUniformLocation,
-        modelSpecularIntensity ,mMatrixUniform ,mvpMatrixUniform);
+        model_renderer.DrawModel(*suzanne, offsetMatrix, modelSpecularIntensity);
 
         offsetMatrix[3] += glm::vec4(3,0,1,0);
 
-        model_renderer.DrawModel(suzanne, uniformColor, offsetMatrix,
-        uniformColorLocation,light0colorUniformLocation, light0positionUniformLocation,
-        light0ambientIntensityUniformLocation, light0cameraPositionUniformLocation, light0specularIntensityUniformLocation,
-        256.0f ,mMatrixUniform ,mvpMatrixUniform);
-
-        glBindVertexArray(0);
+        model_renderer.DrawModel(*suzanne, offsetMatrix, 256.0f);
 
         offsetMatrix[3] += glm::vec4(2,0,0,0);
 
         // my own added model and shaders
-        model_renderer.DrawModel(lightSphere, uniformColor, offsetMatrix,
-            uniformColorLocation, light0colorUniformLocation, light0positionUniformLocation,
-            light0ambientIntensityUniformLocation, light0cameraPositionUniformLocation, light0specularIntensityUniformLocation,
-            modelSpecularIntensity, mMatrixUniform, mvpMatrixUniform);
+        model_renderer.DrawModel(*lightTestSphere, offsetMatrix, modelSpecularIntensity);
 
-        glUseProgram(modelShaderProgram);
-        glUniform1f(colorMultUniformLocation, colorMult);
-        glUniform4f(uniformColorLocation, uniformColor2.r, uniformColor2.g, uniformColor2.b, uniformColor2.a);
-        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(camera.GetProjectionMatrix(aspectRatio) * camera.GetViewMatrix() * cube.getModelMatrix() * offsetMatrix));
-        cube.render(drawMode);
-        // glBindVertexArray(0);
+        model_renderer.DrawModel(*cube, offsetMatrix, modelSpecularIntensity);
 
         offsetMatrix[3] += glm::vec4(3,0,0,1);
 
-        model_renderer.DrawModel(lightSphere, uniformColor2, offsetMatrix,
-            uniformColorLocation,light0colorUniformLocation, light0positionUniformLocation,
-            light0ambientIntensityUniformLocation, light0cameraPositionUniformLocation, light0specularIntensityUniformLocation,
-            modelSpecularIntensity, mMatrixUniform, mvpMatrixUniform);
+        model_renderer.DrawModel(*lightTestSphere, offsetMatrix, modelSpecularIntensity);
+
+
+        // second pass framebuffer
+        glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glUseProgram(frameBufferShaderProgram);
+        //tell to use texture
+        glActiveTexture(GL_TEXTURE0);
+        glUniform1i(sceneTextureUniform, 0);
+        glUniform4iv(fbEffectsUniform,1, glm::value_ptr(framebufferEffects));
+        // printf("iterations: %d\n", framebufferIteration);
+        glUniform4fv(fbAdditionColorUniform, 1, glm::value_ptr(framebufferAdditionColor));
+        glUniform4fv(fbMultColorUniform, 1, glm::value_ptr(framebufferMultColor));
+        glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+        screenQuadModel.render(GL_TRIANGLES);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -347,4 +458,10 @@ int main() {
 
     glfwTerminate();
     return 0;
+}
+
+core::Model* Instantiate(core::Model model)
+{
+    modelList.push_back(model);
+    return &modelList.back();
 }

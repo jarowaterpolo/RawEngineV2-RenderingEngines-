@@ -29,6 +29,8 @@ set(IMGUI_SOURCES
         core/InputHandler.h
         core/modelRenderer.cpp
         core/modelRenderer.h
+        core/Material.cpp
+        core/Material.h
 )
 
 add_executable(RawEngine core/main.cpp

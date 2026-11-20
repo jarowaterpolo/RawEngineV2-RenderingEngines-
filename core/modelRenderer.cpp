@@ -23,10 +23,21 @@ namespace core {
     }
 
     //drawModel
-    void modelRenderer::DrawModel(Model& model, glm::vec4 baseColor, glm::mat4 offsetMatrix, GLint uniformColorLocation, GLint light0colorUniformLocation,
-        GLint light0positionUniformLocation, GLint light0ambientIntensityUniformLocation, GLint light0cameraPositionUniformLocation,
-        GLint light0specularIntensityUniformLocation, float specularIntensity, GLint mMatrixUniform, GLint mvpMatrixUniform)
+    void modelRenderer::DrawModel(Model& model, glm::mat4 offsetMatrix, float specularIntensity)
     {
+        //color
+        uniformColorLocation = glGetUniformLocation(modelShaderProgram, "uniformColor");
+        //mvp
+        mvpMatrixUniform = glGetUniformLocation(modelShaderProgram, "mvpMatrix");
+        mMatrixUniform = glGetUniformLocation(modelShaderProgram, "mMatrix");
+        //lighting
+        light0colorUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].color");
+        light0positionUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].position");
+        light0ambientIntensityUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].ambientIntensity");
+        light0cameraPositionUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].cameraPos");
+        light0specularIntensityUniformLocation = glGetUniformLocation(modelShaderProgram, "lights[0].specularIntensity");
+
+        glm::vec4 baseColor = model.material.GetColor();
         glUseProgram(modelShaderProgram);
         glUniform4f(uniformColorLocation, baseColor.r, baseColor.g, baseColor.b, 1);
         //light
@@ -34,7 +45,7 @@ namespace core {
             glUniform4fv(light0colorUniformLocation, 1, glm::value_ptr(lightObject->GetColor()));
             // printf("lightObject color = (%f,%f,%f,%f) \n", lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
             // printf("%i set to color (%f,%f,%f,%f)\n", light0colorUniformLocation, lightObject.GetColor().r, lightObject.GetColor().g, lightObject.GetColor().b, lightObject.GetColor().a);
-            printf("light pos = (%f,%f,%f) \n", lightObject->GetPos().x, lightObject->GetPos().y, lightObject->GetPos().z);
+            // printf("light pos = (%f,%f,%f) \n", lightObject->GetPos().x, lightObject->GetPos().y, lightObject->GetPos().z);
             glUniform3fv(light0positionUniformLocation, 1, glm::value_ptr(lightObject->GetPos()));
             glUniform1f(light0ambientIntensityUniformLocation, 0.2f);
             glUniform3fv(light0cameraPositionUniformLocation, 1, glm::value_ptr(camera->GetPos()));

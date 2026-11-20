@@ -17,6 +17,17 @@ namespace core {
             GLenum* drawMode;
             float aspectRatio;
 
+            //color
+            GLint uniformColorLocation;
+            //mvp
+            GLint mvpMatrixUniform;
+            GLint mMatrixUniform;
+            //lighting
+            GLint light0colorUniformLocation;
+            GLint light0positionUniformLocation;
+            GLint light0ambientIntensityUniformLocation;
+            GLint light0cameraPositionUniformLocation;
+            GLint light0specularIntensityUniformLocation;
 
         public:
             modelRenderer(unsigned int modelShaderProgram, LightObject* lightObject, Camera* camera, float aspectRatio, GLenum* drawMode);
@@ -25,9 +36,7 @@ namespace core {
             void SetModelShaderProgram(unsigned int modelShaderProgram);
             void SetCamera(Camera camera);
             void UpdateLightObject(LightObject* lightObject);
-            void DrawModel(Model& model, glm::vec4 baseColor, glm::mat4 offsetMatrix, GLint uniformColorLocation,
-                GLint light0colorUniformLocation, GLint light0positionUniformLocation, GLint light0ambientIntensityUniformLocation,
-                GLint light0cameraPositionUniformLocation, GLint light0specularIntensityUniformLocation, float specularIntensity, GLint mMatrixUniform, GLint mvpMatrixUniform);
+            void DrawModel(Model& model, glm::mat4 offsetMatrix, float specularIntensity);
     };
 }
 
